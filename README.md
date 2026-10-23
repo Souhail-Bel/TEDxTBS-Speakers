@@ -32,6 +32,7 @@ publication are defined as SQL files in `supabase/migrations/`, in order:
    admin/member split at the database level, not just in the UI)
 3. `0003_storage.sql` — the `speaker-photos` storage bucket
 4. `0004_realtime.sql` — enables live updates
+5. `0005_grant.sql` — grants for authenticated users
 
 **Easiest path (no CLI install needed):** open your Supabase project →
 **SQL Editor** → paste the contents of each file in order → **Run**. Do
