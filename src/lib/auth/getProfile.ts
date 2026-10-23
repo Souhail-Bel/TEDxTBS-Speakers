@@ -1,0 +1,38 @@
+import { createClient } from "@/lib/supabase/server";
+import type { Profile } from "@/lib/types";
+import { redirect } from "next/navigation";
+
+/**
+ * Fetches the signed-in user's profile row (role, name, etc.) for Server
+ * Components / Route Handlers. Returns null if nobody is signed in.
+ */
+export async function getCurrentProfile(): Promise<Profile | null> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) return null;
+
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("*")
+    .eq("id", user.id)
+    .single();
+
+  return profile as Profile | null;
+}
+
+/** Same as getCurrentProfile, but redirects to /login if nobody is signed in. */
+export async function requireProfile(): Promise<Profile> {
+  const profile = await getCurrentProfile();
+  if (!profile) redirect("/login");
+  return profile;
+}
+
+/** Same as requireProfile, but also redirects non-admins back to the speaker list. */
+export async function requireAdmin(): Promise<Profile> {
+  const profile = await requireProfile();
+  if (profile.role !== "admin") redirect("/");
+  return profile;
+}

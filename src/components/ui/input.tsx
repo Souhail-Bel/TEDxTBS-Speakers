@@ -1,0 +1,53 @@
+import * as React from "react";
+import { cn } from "@/lib/utils/cn";
+
+export const Input = React.forwardRef<
+  HTMLInputElement,
+  React.InputHTMLAttributes<HTMLInputElement>
+>(({ className, type, ...props }, ref) => {
+  return (
+    <input
+      type={type}
+      ref={ref}
+      className={cn(
+        "flex h-10 w-full rounded-lg border border-border bg-surface-1 px-3 text-sm text-text-primary placeholder:text-text-tertiary transition-colors duration-150 outline-none",
+        "focus-visible:border-red-500 focus-visible:ring-2 focus-visible:ring-red-500/30",
+        "disabled:cursor-not-allowed disabled:opacity-50",
+        className
+      )}
+      {...props}
+    />
+  );
+});
+Input.displayName = "Input";
+
+export const Textarea = React.forwardRef<
+  HTMLTextAreaElement,
+  React.TextareaHTMLAttributes<HTMLTextAreaElement>
+>(({ className, ...props }, ref) => {
+  return (
+    <textarea
+      ref={ref}
+      className={cn(
+        "flex min-h-20 w-full rounded-lg border border-border bg-surface-1 px-3 py-2 text-sm text-text-primary placeholder:text-text-tertiary transition-colors duration-150 outline-none resize-y",
+        "focus-visible:border-red-500 focus-visible:ring-2 focus-visible:ring-red-500/30",
+        "disabled:cursor-not-allowed disabled:opacity-50",
+        className
+      )}
+      {...props}
+    />
+  );
+});
+Textarea.displayName = "Textarea";
+
+export const Label = React.forwardRef<
+  HTMLLabelElement,
+  React.LabelHTMLAttributes<HTMLLabelElement>
+>(({ className, ...props }, ref) => (
+  <label
+    ref={ref}
+    className={cn("text-sm font-medium text-text-secondary", className)}
+    {...props}
+  />
+));
+Label.displayName = "Label";
