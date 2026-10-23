@@ -76,7 +76,9 @@ export function TeamMemberForm({ open, onOpenChange, member, currentUserId, onSa
         if (mode === "temp_password" && data.tempPassword) {
           setTempPassword(data.tempPassword);
           toast.success(`${fullName} added`, { description: "Share the temporary password with them securely." });
-          onSaved?.();
+          // Don't call onSaved() yet — it triggers a full page reload, which
+          // would wipe this screen before the password can be read or
+          // copied. It fires instead when they dismiss via "Done" below.
         } else {
           toast.success(`Invite sent to ${email}`);
           onOpenChange(false);
@@ -124,7 +126,14 @@ export function TeamMemberForm({ open, onOpenChange, member, currentUserId, onSa
               </button>
             </div>
             <DialogFooter>
-              <Button onClick={() => onOpenChange(false)}>Done</Button>
+              <Button
+                onClick={() => {
+                  onOpenChange(false);
+                  onSaved?.();
+                }}
+              >
+                Done
+              </Button>
             </DialogFooter>
           </div>
         ) : (

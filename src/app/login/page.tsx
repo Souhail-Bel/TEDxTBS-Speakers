@@ -27,7 +27,11 @@ function LoginForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(() =>
+    searchParams.get("error") === "link_invalid"
+      ? "That link has expired or was already used. Ask an admin to send a new one, or use “Forgot your password” below."
+      : null
+  );
   const [forgotSent, setForgotSent] = useState(false);
   const recaptchaRef = useRef<ReCAPTCHA>(null);
 

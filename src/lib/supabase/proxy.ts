@@ -2,7 +2,7 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import { SUPABASE_ANON_KEY, SUPABASE_URL } from "./env";
 
-const PUBLIC_PATHS = ["/login", "/reset-password", "/api/auth/login"];
+const PUBLIC_PATHS = ["/login", "/reset-password", "/api/auth/login", "/auth/confirm"];
 
 /**
  * Refreshes the Supabase auth session on every request and redirects signed-out
