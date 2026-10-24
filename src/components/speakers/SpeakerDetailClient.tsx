@@ -18,6 +18,7 @@ import { createClient } from "@/lib/supabase/client";
 import { requestDeleteSpeaker } from "@/lib/speakers/mutations";
 import { fetchSpeakerById, fetchAllTags } from "@/lib/speakers/queries";
 import { useRealtimeRefetch } from "@/lib/hooks/useRealtimeRefetch";
+import { tagColor } from "@/lib/utils/tag-color";
 import { useProfile } from "@/components/auth/ProfileProvider";
 import type { CommentWithAuthor, Profile, SpeakerWithRelations, Tag } from "@/lib/types";
 
@@ -162,11 +163,18 @@ export function SpeakerDetailClient({
 
         {speaker.tags.length > 0 && (
           <div className="mt-4 flex flex-wrap gap-1.5">
-            {speaker.tags.map((tag) => (
-              <span key={tag.id} className="rounded-full bg-surface-2 px-2.5 py-1 text-xs text-text-secondary">
-                {tag.name}
-              </span>
-            ))}
+            {speaker.tags.map((tag) => {
+              const color = tagColor(tag.name);
+              return (
+                <span
+                  key={tag.id}
+                  style={{ backgroundColor: color.background, color: color.text }}
+                  className="rounded-full px-2.5 py-1 text-xs"
+                >
+                  {tag.name}
+                </span>
+              );
+            })}
           </div>
         )}
 

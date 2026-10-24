@@ -7,6 +7,7 @@ import { MoreHorizontal, Trash2, Pencil, MessageSquare } from "lucide-react";
 import { InitialsAvatar } from "@/components/ui/avatar";
 import { StatusBadge } from "@/components/speakers/StatusBadge";
 import { TrackerAvatars } from "@/components/speakers/TrackerAvatars";
+import { tagColor } from "@/lib/utils/tag-color";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -86,14 +87,18 @@ export function SpeakerTable({ speakers, onEdit, onDeleteRequest }: SpeakerTable
                   </td>
                   <td className="px-4 py-3">
                     <div className="flex max-w-48 flex-wrap gap-1">
-                      {speaker.tags.slice(0, 3).map((tag) => (
-                        <span
-                          key={tag.id}
-                          className="rounded-full bg-surface-2 px-2 py-0.5 text-[11px] text-text-secondary"
-                        >
-                          {tag.name}
-                        </span>
-                      ))}
+                      {speaker.tags.slice(0, 3).map((tag) => {
+                        const color = tagColor(tag.name);
+                        return (
+                          <span
+                            key={tag.id}
+                            style={{ backgroundColor: color.background, color: color.text }}
+                            className="rounded-full px-2 py-0.5 text-[11px]"
+                          >
+                            {tag.name}
+                          </span>
+                        );
+                      })}
                       {speaker.tags.length > 3 && (
                         <span className="text-[11px] text-text-tertiary">+{speaker.tags.length - 3}</span>
                       )}

@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { MessageSquare } from "lucide-react";
 import { InitialsAvatar } from "@/components/ui/avatar";
 import { TrackerAvatars } from "@/components/speakers/TrackerAvatars";
+import { tagColor } from "@/lib/utils/tag-color";
 import { STATUS_LABELS, type SpeakerStatus, type SpeakerWithRelations } from "@/lib/types";
 
 const COLUMNS: SpeakerStatus[] = ["no_reply", "unclear", "accepted", "refused"];
@@ -67,14 +68,18 @@ export function SpeakerBoard({ speakers }: { speakers: SpeakerWithRelations[] })
 
                       {speaker.tags.length > 0 && (
                         <div className="mt-2 flex flex-wrap gap-1">
-                          {speaker.tags.slice(0, 2).map((tag) => (
-                            <span
-                              key={tag.id}
-                              className="rounded-full bg-surface-2 px-2 py-0.5 text-[10px] text-text-secondary"
-                            >
-                              {tag.name}
-                            </span>
-                          ))}
+                          {speaker.tags.slice(0, 2).map((tag) => {
+                            const color = tagColor(tag.name);
+                            return (
+                              <span
+                                key={tag.id}
+                                style={{ backgroundColor: color.background, color: color.text }}
+                                className="rounded-full px-2 py-0.5 text-[10px]"
+                              >
+                                {tag.name}
+                              </span>
+                            );
+                          })}
                         </div>
                       )}
 

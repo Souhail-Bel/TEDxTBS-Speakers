@@ -5,6 +5,7 @@ import { X, Tag as TagIcon } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils/cn";
+import { tagColor } from "@/lib/utils/tag-color";
 import type { Tag } from "@/lib/types";
 
 interface TagInputProps {
@@ -45,31 +46,59 @@ export function TagInput({ value, onChange, allTags }: TagInputProps) {
   return (
     <div className="space-y-2">
       <div className="flex flex-wrap gap-1.5">
-        {value.map((name) => (
-          <span
-            key={name}
-            className="inline-flex items-center gap-1 rounded-full border border-border bg-surface-3 px-2.5 py-1 text-xs text-text-primary"
-          >
-            <TagIcon className="h-3 w-3 text-text-tertiary" />
-            {name}
-            <button
-              type="button"
-              onClick={() => removeTag(name)}
-              className="ml-0.5 text-text-tertiary hover:text-red-400"
+        {value.map((name) => {
+          const color = tagColor(name);
+          return (
+            <span
+              key={name}
+              style={{ backgroundColor: color.background, borderColor: color.border, color: color.text }}
+              className="inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs"
             >
-              <X className="h-3 w-3" />
-            </button>
-          </span>
-        ))}
+              <TagIcon className="h-3 w-3 opacity-70" />
+              {name}
+              <button
+                type="button"
+                onClick={() => removeTag(name)}
+                className="ml-0.5 opacity-70 transition-opacity hover:opacity-100"
+              >
+                <X className="h-3 w-3" />
+              </button>
+            </span>
+          );
+        })}
       </div>
 
       <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger asChild>
           <Input
-            placeholder="Type to find or create a tag…"
+            placeholder="Type to find or create a tag, or separate with commas…"
             value={query}
             onChange={(e) => {
-              setQuery(e.target.value);
+              const raw = e.target.value;
+              if (raw.includes(",")) {
+                // YouTube-style: each comma commits everything typed before
+                // it as its own tag; whatever's after the last comma stays
+                // in the box as the in-progress tag.
+                const parts = raw.split(",");
+                const toAdd = parts
+                  .slice(0, -1)
+                  .map((p) => p.trim())
+                  .filter(Boolean);
+
+                if (toAdd.length > 0) {
+                  const merged = [...value];
+                  for (const name of toAdd) {
+                    if (!merged.some((v) => v.toLowerCase() === name.toLowerCase())) {
+                      merged.push(name);
+                    }
+                  }
+                  onChange(merged);
+                }
+                setQuery(parts[parts.length - 1]);
+                setOpen(true);
+                return;
+              }
+              setQuery(raw);
               setOpen(true);
             }}
             onFocus={() => setOpen(true)}
