@@ -73,10 +73,21 @@ create policy profiles_delete_admin
 -- ---------------------------------------------------------------------------
 -- speakers
 -- ---------------------------------------------------------------------------
+-- `or deleted_by = auth.uid()`: Postgres requires a row to remain visible
+-- under the table's SELECT policies for the role performing an UPDATE, in
+-- addition to satisfying the UPDATE policy's own WITH CHECK — otherwise a
+-- member soft-deleting a speaker sets deleted_at, immediately making
+-- `deleted_at is null` false for them with no other policy covering them,
+-- and the write itself gets rejected with "new row violates row-level
+-- security policy". Letting a member keep seeing rows THEY personally
+-- deleted fixes this. It isn't a real visibility change in the app:
+-- fetchSpeakers() filters `deleted_at is null` at the query level
+-- regardless of RLS, and /trash is gated by requireAdmin() at the route
+-- level, so deleted speakers still never appear in the UI for a member.
 create policy speakers_select_active
   on public.speakers for select
   to authenticated
-  using (deleted_at is null);
+  using (deleted_at is null or deleted_by = auth.uid());
 
 create policy speakers_select_admin_all
   on public.speakers for select
@@ -89,19 +100,19 @@ create policy speakers_insert
   with check (added_by = auth.uid());
 
 -- Members can edit (and soft-delete) any speaker that isn't already pending
--- deletion. Once deleted_at is set, this policy no longer matches the row,
--- so a member cannot un-delete it themselves — only an admin can.
-create policy speakers_update_member
+-- deletion. Once deleted_at is set, this condition no longer matches the
+-- row, so a member cannot un-delete it themselves — only an admin can
+-- (via is_admin()). Deliberately ONE policy, not two separate permissive
+-- ones for member/admin: Postgres requires the UPDATE's resulting row to
+-- also remain visible under the table's SELECT policies for the acting
+-- role (see speakers_select_active below), and in testing, splitting this
+-- into member+admin policies ran into that interaction in a way a single
+-- policy does not.
+create policy speakers_update
   on public.speakers for update
   to authenticated
-  using (deleted_at is null)
+  using (deleted_at is null or public.is_admin())
   with check (true);
-
-create policy speakers_update_admin
-  on public.speakers for update
-  to authenticated
-  using (public.is_admin())
-  with check (public.is_admin());
 
 create policy speakers_delete_admin
   on public.speakers for delete
