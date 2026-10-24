@@ -71,6 +71,7 @@ export function TagInput({ value, onChange, allTags }: TagInputProps) {
       <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger asChild>
           <Input
+            type="text"
             placeholder="Type to find or create a tag, or separate with commas…"
             value={query}
             onChange={(e) => {
