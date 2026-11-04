@@ -15,7 +15,7 @@ import {
 import { cn } from "@/lib/utils/cn";
 import type { Tag } from "@/lib/types";
 
-export type SortKey = "created_desc" | "created_asc" | "name_asc" | "name_desc";
+export type SortKey = "created_desc" | "created_asc" | "name_asc" | "name_desc" | "importance_desc";
 export type ViewMode = "table" | "board";
 
 interface SpeakerFiltersProps {
@@ -102,6 +102,7 @@ export function SpeakerFilters({
             <SelectItem value="created_asc">Oldest first</SelectItem>
             <SelectItem value="name_asc">Name (A–Z)</SelectItem>
             <SelectItem value="name_desc">Name (Z–A)</SelectItem>
+            <SelectItem value="importance_desc">Importance (S first)</SelectItem>
           </SelectContent>
         </Select>
       </div>

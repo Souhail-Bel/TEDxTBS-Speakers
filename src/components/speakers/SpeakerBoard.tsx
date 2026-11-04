@@ -7,6 +7,7 @@ import { InitialsAvatar } from "@/components/ui/avatar";
 import { TrackerAvatars } from "@/components/speakers/TrackerAvatars";
 import { tagColor } from "@/lib/utils/tag-color";
 import { STATUS_LABELS, type SpeakerStatus, type SpeakerWithRelations } from "@/lib/types";
+import { TierBadge } from "@/components/speakers/TierBadge";
 
 const COLUMNS: SpeakerStatus[] = ["no_reply", "unclear", "accepted", "refused"];
 
@@ -64,6 +65,7 @@ export function SpeakerBoard({ speakers }: { speakers: SpeakerWithRelations[] })
                           <p className="truncate text-sm font-medium text-text-primary">{speaker.name}</p>
                           <p className="truncate text-xs text-text-tertiary">{speaker.origin}</p>
                         </div>
+                        {speaker.importance && <TierBadge tier={speaker.importance} />}
                       </div>
 
                       {speaker.tags.length > 0 && (

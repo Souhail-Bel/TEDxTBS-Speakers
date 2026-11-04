@@ -5,6 +5,7 @@
 export type UserRole = "admin" | "member";
 export type SpeakerStatus = "no_reply" | "accepted" | "refused" | "unclear";
 export type LinkPlatform = "linkedin" | "facebook" | "x" | "instagram" | "website" | "other";
+export type SpeakerTier = "s" | "a" | "b" | "c" | "f";
 
 export interface Profile {
   id: string;
@@ -28,6 +29,7 @@ export interface Speaker {
   idea_text: string | null;
   experience_text: string | null;
   status: SpeakerStatus;
+  importance: SpeakerTier | null;
   added_by: string | null;
   created_at: string;
   updated_at: string;
@@ -120,4 +122,15 @@ export const PLATFORM_LABELS: Record<LinkPlatform, string> = {
   instagram: "Instagram",
   website: "Website",
   other: "Other",
+};
+
+// Best first — the order every tier dropdown/sort/column uses.
+export const TIER_ORDER: SpeakerTier[] = ["s", "a", "b", "c", "f"];
+
+export const TIER_LABELS: Record<SpeakerTier, string> = {
+  s: "S — Must have",
+  a: "A — Strong",
+  b: "B — Good",
+  c: "C — Maybe",
+  f: "F — Unlikely",
 };

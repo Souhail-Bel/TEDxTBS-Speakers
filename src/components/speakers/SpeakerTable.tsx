@@ -15,6 +15,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import type { SpeakerWithRelations } from "@/lib/types";
+import { TierBadge } from "@/components/speakers/TierBadge";
 
 interface SpeakerTableProps {
   speakers: SpeakerWithRelations[];
@@ -38,6 +39,7 @@ export function SpeakerTable({ speakers, onEdit, onDeleteRequest }: SpeakerTable
           <thead>
             <tr className="border-b border-border bg-surface-1 text-left text-xs text-text-tertiary">
               <th className="px-4 py-3 font-medium">Speaker</th>
+              <th className="px-4 py-3 font-medium">Tier</th>
               <th className="px-4 py-3 font-medium">Status</th>
               <th className="px-4 py-3 font-medium">Tags</th>
               <th className="px-4 py-3 font-medium">Tracking</th>
@@ -81,6 +83,9 @@ export function SpeakerTable({ speakers, onEdit, onDeleteRequest }: SpeakerTable
                         </span>
                       )}
                     </Link>
+                  </td>
+                  <td className="px-4 py-3">
+                    <TierBadge tier={speaker.importance} />
                   </td>
                   <td className="px-4 py-3">
                     <StatusBadge status={speaker.status} />

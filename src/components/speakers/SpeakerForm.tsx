@@ -22,7 +22,15 @@ import { TagInput } from "@/components/speakers/TagInput";
 import { createClient } from "@/lib/supabase/client";
 import { createSpeaker, updateSpeaker } from "@/lib/speakers/mutations";
 import { useProfile } from "@/components/auth/ProfileProvider";
-import { STATUS_LABELS, type SpeakerStatus, type SpeakerWithRelations, type Tag } from "@/lib/types";
+import {
+  STATUS_LABELS,
+  TIER_LABELS,
+  TIER_ORDER,
+  type SpeakerStatus,
+  type SpeakerTier,
+  type SpeakerWithRelations,
+  type Tag,
+} from "@/lib/types";
 
 const schema = z.object({
   name: z.string().trim().min(1, "Name is required"),
@@ -36,6 +44,7 @@ const schema = z.object({
   idea_text: z.string().trim().optional(),
   experience_text: z.string().trim().optional(),
   status: z.enum(["no_reply", "accepted", "refused", "unclear"]),
+  importance: z.union([z.enum(["s", "a", "b", "c", "f"]), z.literal("")]).optional(),
 });
 
 type FormValues = z.infer<typeof schema>;
@@ -75,6 +84,7 @@ export function SpeakerForm({ open, onOpenChange, speaker, allTags, onSaved }: S
       idea_text: speaker?.idea_text ?? "",
       experience_text: speaker?.experience_text ?? "",
       status: speaker?.status ?? "no_reply",
+      importance: speaker?.importance ?? "",
     },
   });
 
@@ -97,6 +107,7 @@ export function SpeakerForm({ open, onOpenChange, speaker, allTags, onSaved }: S
       idea_text: values.idea_text || null,
       experience_text: values.experience_text || null,
       status: values.status as SpeakerStatus,
+      importance: (values.importance || null) as SpeakerTier | null,
       links: links.filter((l) => l.url.trim().length > 0),
       tagNames,
     };
@@ -164,26 +175,51 @@ export function SpeakerForm({ open, onOpenChange, speaker, allTags, onSaved }: S
             </div>
           </div>
 
-          <div className="space-y-1.5">
-            <Label htmlFor="status">Status</Label>
-            <Controller
-              control={control}
-              name="status"
-              render={({ field }) => (
-                <Select value={field.value} onValueChange={field.onChange}>
-                  <SelectTrigger id="status">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {(Object.keys(STATUS_LABELS) as SpeakerStatus[]).map((s) => (
-                      <SelectItem key={s} value={s}>
-                        {STATUS_LABELS[s]}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              )}
-            />
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1.5">
+              <Label htmlFor="status">Status</Label>
+              <Controller
+                control={control}
+                name="status"
+                render={({ field }) => (
+                  <Select value={field.value} onValueChange={field.onChange}>
+                    <SelectTrigger id="status">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {(Object.keys(STATUS_LABELS) as SpeakerStatus[]).map((s) => (
+                        <SelectItem key={s} value={s}>
+                          {STATUS_LABELS[s]}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <Label htmlFor="importance">Importance</Label>
+              <Controller
+                control={control}
+                name="importance"
+                render={({ field }) => (
+                  <Select value={field.value || "none"} onValueChange={(v) => field.onChange(v === "none" ? "" : v)}>
+                    <SelectTrigger id="importance">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">Unranked</SelectItem>
+                      {TIER_ORDER.map((t) => (
+                        <SelectItem key={t} value={t}>
+                          {TIER_LABELS[t]}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+              />
+            </div>
           </div>
 
           <div className="space-y-1.5">

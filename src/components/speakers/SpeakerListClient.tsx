@@ -13,7 +13,10 @@ import { createClient } from "@/lib/supabase/client";
 import { fetchAllTags, fetchSpeakers } from "@/lib/speakers/queries";
 import { requestDeleteSpeaker } from "@/lib/speakers/mutations";
 import { useProfile } from "@/components/auth/ProfileProvider";
-import type { SpeakerStatus, SpeakerWithRelations, Tag } from "@/lib/types";
+import { TIER_ORDER, type SpeakerWithRelations, type SpeakerStatus, type Tag } from "@/lib/types"
+
+// Lower index = higher rank (S is index 0 in TIER_ORDER); unranked sorts last.
+const TIER_RANK = Object.fromEntries(TIER_ORDER.map((t, i) => [t, i]));
 
 export function SpeakerListClient({
   initialSpeakers,
@@ -86,6 +89,13 @@ export function SpeakerListClient({
         break;
       case "name_desc":
         sorted.sort((a, b) => b.name.localeCompare(a.name));
+        break;
+      case "importance_desc":
+        sorted.sort((a, b) => {
+          const ra = a.importance ? TIER_RANK[a.importance] : TIER_ORDER.length;
+          const rb = b.importance ? TIER_RANK[b.importance] : TIER_ORDER.length;
+          return ra - rb;
+        });
         break;
     }
     return sorted;

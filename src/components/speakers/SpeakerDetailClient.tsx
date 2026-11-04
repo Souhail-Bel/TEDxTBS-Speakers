@@ -21,6 +21,7 @@ import { useRealtimeRefetch } from "@/lib/hooks/useRealtimeRefetch";
 import { tagColor } from "@/lib/utils/tag-color";
 import { useProfile } from "@/components/auth/ProfileProvider";
 import type { CommentWithAuthor, Profile, SpeakerWithRelations, Tag } from "@/lib/types";
+import { TierBadge } from "@/components/speakers/TierBadge";
 
 interface SpeakerDetailClientProps {
   speaker: SpeakerWithRelations;
@@ -109,7 +110,8 @@ export function SpeakerDetailClient({
                 {speaker.origin}
                 {speaker.age ? ` · ${speaker.age} years old` : ""}
               </p>
-              <div className="mt-2">
+              <div className="mt-2 flex items-center gap-2">
+                <TierBadge tier={speaker.importance} />
                 <StatusChanger
                   speakerId={speaker.id}
                   status={speaker.status}

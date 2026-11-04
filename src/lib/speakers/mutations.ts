@@ -1,5 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import type { LinkPlatform, SpeakerStatus, Tag } from "@/lib/types";
+import type { LinkPlatform, SpeakerStatus, SpeakerTier, Tag } from "@/lib/types";
 import { writeAuditLog } from "@/lib/audit/log";
 
 type DB = SupabaseClient;
@@ -14,6 +14,7 @@ export interface SpeakerFormInput {
   idea_text: string | null;
   experience_text: string | null;
   status: SpeakerStatus;
+  importance: SpeakerTier | null;
   links: { platform: LinkPlatform; url: string; label: string | null }[];
   tagNames: string[];
 }
