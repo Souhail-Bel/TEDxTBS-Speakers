@@ -118,6 +118,7 @@ export function SpeakerDetailClient({
                   onChanged={(next) => setSpeaker((s) => ({ ...s, status: next }))}
                 />
               </div>
+              {speaker.bio && <p className="mt-2 max-w-md text-sm text-text-secondary">{speaker.bio}</p>}
             </div>
           </div>
 

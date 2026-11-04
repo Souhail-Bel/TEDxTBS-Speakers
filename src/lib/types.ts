@@ -30,6 +30,7 @@ export interface Speaker {
   experience_text: string | null;
   status: SpeakerStatus;
   importance: SpeakerTier | null;
+  bio: string | null;
   added_by: string | null;
   created_at: string;
   updated_at: string;

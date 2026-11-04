@@ -11,6 +11,7 @@ export interface SpeakerFormInput {
   age: number | null;
   email: string | null;
   phone: string | null;
+  bio: string | null;
   idea_text: string | null;
   experience_text: string | null;
   status: SpeakerStatus;

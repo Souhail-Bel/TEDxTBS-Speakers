@@ -41,6 +41,7 @@ const schema = z.object({
     .transform((v) => (v === "" || v === undefined ? null : v)),
   email: z.union([z.string().trim().email("Enter a valid email"), z.literal("")]).optional(),
   phone: z.string().trim().optional(),
+  bio: z.string().trim().max(400, "Keep it to 400 characters max").optional(),
   idea_text: z.string().trim().optional(),
   experience_text: z.string().trim().optional(),
   status: z.enum(["no_reply", "accepted", "refused", "unclear"]),
@@ -81,6 +82,7 @@ export function SpeakerForm({ open, onOpenChange, speaker, allTags, onSaved }: S
       age: (speaker?.age ?? "") as unknown as number,
       email: speaker?.email ?? "",
       phone: speaker?.phone ?? "",
+      bio: speaker?.bio ?? "",
       idea_text: speaker?.idea_text ?? "",
       experience_text: speaker?.experience_text ?? "",
       status: speaker?.status ?? "no_reply",
@@ -104,6 +106,7 @@ export function SpeakerForm({ open, onOpenChange, speaker, allTags, onSaved }: S
       age: values.age ?? null,
       email: values.email || null,
       phone: values.phone || null,
+      bio: values.bio || null,
       idea_text: values.idea_text || null,
       experience_text: values.experience_text || null,
       status: values.status as SpeakerStatus,
@@ -220,6 +223,12 @@ export function SpeakerForm({ open, onOpenChange, speaker, allTags, onSaved }: S
                 )}
               />
             </div>
+          </div>
+
+          <div className="space-y-1.5">
+            <Label htmlFor="bio">Brief bio</Label>
+            <Textarea id="bio" {...register("bio")} placeholder="A couple of sentences; who they are..." />
+            {errors.bio && <p className="text-xs text-red-400">{errors.bio.message}</p>}
           </div>
 
           <div className="space-y-1.5">
