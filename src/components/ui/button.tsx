@@ -6,24 +6,27 @@ import { cn } from "@/lib/utils/cn";
 import { Loader2 } from "lucide-react";
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-lg text-sm font-medium transition-all duration-150 ease-out active:scale-[0.97] disabled:pointer-events-none disabled:opacity-50 cursor-pointer select-none",
+  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-xl text-sm font-semibold transition-all duration-150 ease-out active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50 cursor-pointer select-none",
   {
     variants: {
       variant: {
         primary:
-          "bg-red-500 text-white hover:bg-red-400 shadow-[0_0_0_1px_rgba(0,0,0,0)] hover:shadow-[0_0_20px_-4px_var(--red-500)]",
+          "bg-gradient-to-b from-[#FF1E32] to-[#E31B2B] text-white border border-[#FF4655]/35 shadow-[0_0_20px_-4px_rgba(227,27,43,0.55),0_1px_0_0_rgba(255,255,255,0.18)_inset] hover:from-[#FF2D3F] hover:to-[#EE1F30] hover:shadow-[0_0_26px_-2px_rgba(255,20,40,0.7)]",
         secondary:
-          "bg-surface-2 text-text-primary border border-border hover:bg-surface-3",
-        ghost: "text-text-secondary hover:bg-surface-2 hover:text-text-primary",
-        danger: "bg-red-600 text-white hover:bg-red-500",
+          "bg-surface-2/90 text-text-primary border border-border hover:bg-surface-3 hover:border-[#4A2E30]",
+        ghost:
+          "text-text-secondary hover:bg-surface-2 hover:text-text-primary",
+        danger:
+          "bg-gradient-to-b from-[#EF4444] to-[#DC2626] text-white border border-red-400/30 shadow-[0_0_18px_-4px_rgba(239,68,68,0.45)] hover:from-[#F87171] hover:to-[#EF4444]",
         outline:
-          "border border-border text-text-primary hover:bg-surface-2 bg-transparent",
-        link: "text-red-400 hover:text-red-300 underline-offset-4 hover:underline p-0 h-auto",
+          "border border-border bg-[#140E0E]/85 text-text-primary hover:bg-surface-2 hover:border-[#4A2E30]",
+        link:
+          "text-red-400 hover:text-red-300 underline-offset-4 hover:underline p-0 h-auto font-medium",
       },
       size: {
-        sm: "h-8 px-3 text-xs",
-        md: "h-9 px-4",
-        lg: "h-11 px-5 text-base",
+        sm: "h-8 px-3 text-xs rounded-lg",
+        md: "h-10 px-4 text-sm",
+        lg: "h-11 px-5 text-sm",
         icon: "h-9 w-9",
       },
     },

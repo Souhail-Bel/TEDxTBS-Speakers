@@ -38,16 +38,41 @@ export function AvatarFallback({
   );
 }
 
-/** Deterministic initials-based avatar, used wherever we don't have a photo (team members, comment authors). */
+/** Deterministic initials-based avatar, or photo avatar when `src` is provided. */
 export function InitialsAvatar({
   name,
+  src,
   className,
   size = "sm",
 }: {
   name: string;
+  src?: string | null;
   className?: string;
-  size?: "xs" | "sm" | "md";
+  size?: "xs" | "sm" | "md" | "lg";
 }) {
+  const sizeClasses = {
+    xs: "h-6 w-6 text-[10px]",
+    sm: "h-8 w-8 text-xs",
+    md: "h-10 w-10 text-xs",
+    lg: "h-14 w-14 text-base",
+  }[size];
+
+  if (src) {
+    return (
+      // eslint-disable-next-line @next/next/no-img-element
+      <img
+        src={src}
+        alt={name}
+        title={name}
+        className={cn(
+          "shrink-0 rounded-full object-cover ring-1 ring-white/15",
+          sizeClasses,
+          className
+        )}
+      />
+    );
+  }
+
   const initials = name
     .split(" ")
     .map((p) => p[0])
@@ -61,20 +86,14 @@ export function InitialsAvatar({
   for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
   const hue = Math.abs(hash) % 360;
 
-  const sizeClasses = {
-    xs: "h-5 w-5 text-[9px]",
-    sm: "h-8 w-8 text-xs",
-    md: "h-10 w-10 text-sm",
-  }[size];
-
   return (
     <div
       className={cn(
-        "flex shrink-0 items-center justify-center rounded-full font-semibold text-white ring-1 ring-black/20",
+        "flex shrink-0 items-center justify-center rounded-full font-semibold tracking-wide text-white ring-1 ring-white/12 shadow-sm",
         sizeClasses,
         className
       )}
-      style={{ backgroundColor: `hsl(${hue} 45% 32%)` }}
+      style={{ backgroundColor: `hsl(${hue} 52% 36%)` }}
       title={name}
     >
       {initials || "?"}

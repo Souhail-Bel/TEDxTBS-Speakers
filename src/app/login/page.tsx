@@ -7,6 +7,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Mail, Lock, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input, Label } from "@/components/ui/input";
+import { TedxLogo } from "@/components/layout/Sidebar";
 import { createClient } from "@/lib/supabase/client";
 
 const RECAPTCHA_SITE_KEY = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY ?? "";
@@ -88,26 +89,37 @@ function LoginForm() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-bg px-4">
-      <div className="pointer-events-none fixed inset-0 overflow-hidden">
-        <div className="absolute -top-40 left-1/2 h-96 w-96 -translate-x-1/2 rounded-full bg-red-500/10 blur-[120px]" />
-      </div>
+    <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-[#080808] px-4 py-10">
+      {/* Subtle Stage Photography Backdrop */}
+      <div
+        className="pointer-events-none fixed inset-0 bg-cover bg-center opacity-20"
+        style={{ backgroundImage: "url('/images/hero-stage.jpg')" }}
+        aria-hidden="true"
+      />
+      <div
+        className="pointer-events-none fixed inset-0 bg-gradient-to-b from-[#080808]/65 via-[#080808]/85 to-[#080808]"
+        aria-hidden="true"
+      />
+      <div
+        className="pointer-events-none fixed -top-40 left-1/2 h-[420px] w-[420px] -translate-x-1/2 rounded-full blur-[130px]"
+        style={{ background: "radial-gradient(circle, rgba(227,27,43,0.22) 0%, transparent 70%)" }}
+        aria-hidden="true"
+      />
 
       <motion.div
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
-        className="relative w-full max-w-sm"
+        className="relative z-10 w-full max-w-[390px]"
       >
-        <div className="mb-8 text-center">
-          <div className="mb-3 inline-flex items-center gap-1 text-2xl font-black tracking-tight">
-            <span className="text-text-primary">TEDx</span>
-            <span className="text-red-500">TBS</span>
-          </div>
-          <p className="text-sm text-text-secondary">Speaker coordination platform</p>
+        <div className="mb-7 flex flex-col items-center text-center">
+          <TedxLogo className="flex flex-col items-center" />
+          <p className="mt-3 text-xs font-medium uppercase tracking-[0.14em] text-[#A6A0A0]">
+            Speakers Management Platform
+          </p>
         </div>
 
-        <div className="rounded-2xl border border-border bg-surface-1 p-6 shadow-2xl">
+        <div className="tedx-table-shell rounded-2xl p-6 sm:p-7">
           <AnimatePresence mode="wait">
             {mode === "login" ? (
               <motion.form
@@ -122,7 +134,7 @@ function LoginForm() {
                 <div className="space-y-1.5">
                   <Label htmlFor="email">Email</Label>
                   <div className="relative">
-                    <Mail className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-text-tertiary" />
+                    <Mail className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[#777070]" />
                     <Input
                       id="email"
                       type="email"
@@ -131,7 +143,7 @@ function LoginForm() {
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       placeholder="you@tedxtbs.com"
-                      className="pl-9"
+                      className="pl-10"
                     />
                   </div>
                 </div>
@@ -139,7 +151,7 @@ function LoginForm() {
                 <div className="space-y-1.5">
                   <Label htmlFor="password">Password</Label>
                   <div className="relative">
-                    <Lock className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-text-tertiary" />
+                    <Lock className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[#777070]" />
                     <Input
                       id="password"
                       type="password"
@@ -148,7 +160,7 @@ function LoginForm() {
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       placeholder="••••••••"
-                      className="pl-9"
+                      className="pl-10"
                     />
                   </div>
                 </div>
@@ -165,7 +177,7 @@ function LoginForm() {
                       initial={{ opacity: 0, height: 0 }}
                       animate={{ opacity: 1, height: "auto" }}
                       exit={{ opacity: 0, height: 0 }}
-                      className="rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-sm text-red-300"
+                      className="rounded-xl border border-[#E31B2B]/35 bg-[#E31B2B]/12 px-3.5 py-2.5 text-xs text-[#FF8590]"
                     >
                       {error}
                     </motion.p>
@@ -173,7 +185,7 @@ function LoginForm() {
                 </AnimatePresence>
 
                 <Button type="submit" className="w-full" size="lg" loading={loading}>
-                  {loading ? "Signing in…" : "Sign in"}
+                  {loading ? "Signing in…" : "Sign in to TEDxTBS"}
                 </Button>
 
                 <button
@@ -182,7 +194,7 @@ function LoginForm() {
                     setError(null);
                     setMode("forgot");
                   }}
-                  className="w-full text-center text-sm text-text-tertiary transition-colors hover:text-red-400"
+                  className="w-full text-center text-xs text-[#8A8282] transition-colors hover:text-[#FF5C6C]"
                 >
                   Forgot your password?
                 </button>
@@ -197,7 +209,7 @@ function LoginForm() {
               >
                 {forgotSent ? (
                   <div className="space-y-4 text-center">
-                    <p className="text-sm text-text-primary">
+                    <p className="text-sm text-[#F5F5F5]">
                       If that email belongs to an account, a reset link is on its way. Check your
                       inbox (and spam folder).
                     </p>
@@ -214,8 +226,8 @@ function LoginForm() {
                   </div>
                 ) : (
                   <form onSubmit={handleForgotPassword} className="space-y-4">
-                    <p className="text-sm text-text-secondary">
-                      Enter your email and we&apos;ll send you a link to reset your password.
+                    <p className="text-xs leading-relaxed text-[#A6A0A0]">
+                      Enter your coordinator email and we&apos;ll send a link to reset your password.
                     </p>
                     <div className="space-y-1.5">
                       <Label htmlFor="forgot-email">Email</Label>
@@ -230,7 +242,7 @@ function LoginForm() {
                     </div>
 
                     {error && (
-                      <p className="rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-sm text-red-300">
+                      <p className="rounded-xl border border-[#E31B2B]/35 bg-[#E31B2B]/12 px-3.5 py-2.5 text-xs text-[#FF8590]">
                         {error}
                       </p>
                     )}
@@ -241,7 +253,7 @@ function LoginForm() {
                     <button
                       type="button"
                       onClick={() => setMode("login")}
-                      className="flex w-full items-center justify-center gap-1 text-sm text-text-tertiary transition-colors hover:text-red-400"
+                      className="flex w-full items-center justify-center gap-1.5 text-xs text-[#8A8282] transition-colors hover:text-[#FF5C6C]"
                     >
                       <ArrowLeft className="h-3.5 w-3.5" /> Back to sign in
                     </button>
@@ -252,8 +264,8 @@ function LoginForm() {
           </AnimatePresence>
         </div>
 
-        <p className="mt-6 text-center text-xs text-text-tertiary">
-          Accounts are created by the speaker coordination team. No sign-up here.
+        <p className="mt-6 text-center text-xs text-[#6E6666]">
+          Internal platform for the TEDxTBS Curation &amp; Speaker Relations team.
         </p>
       </motion.div>
     </div>

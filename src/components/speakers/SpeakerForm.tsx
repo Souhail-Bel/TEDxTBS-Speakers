@@ -5,6 +5,7 @@ import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { toast } from "sonner";
+import { Plus } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -20,13 +21,14 @@ import { ImageCropUploader } from "@/components/media/ImageCropUploader";
 import { LinksEditor, type LinkDraft } from "@/components/speakers/LinksEditor";
 import { TagInput } from "@/components/speakers/TagInput";
 import { createClient } from "@/lib/supabase/client";
-import { createSpeaker, updateSpeaker } from "@/lib/speakers/mutations";
+import { createSpeaker, createStatusOption, updateSpeaker } from "@/lib/speakers/mutations";
 import { useProfile } from "@/components/auth/ProfileProvider";
 import {
-  STATUS_LABELS,
+  DEFAULT_STATUSES,
   TIER_LABELS,
   TIER_ORDER,
   type SpeakerStatus,
+  type SpeakerStatusOption,
   type SpeakerTier,
   type SpeakerWithRelations,
   type Tag,
@@ -44,7 +46,8 @@ const schema = z.object({
   bio: z.string().trim().max(400, "Keep it to 400 characters max").optional(),
   idea_text: z.string().trim().optional(),
   experience_text: z.string().trim().optional(),
-  status: z.enum(["no_reply", "accepted", "refused", "unclear"]),
+  custom_message: z.string().trim().optional(),
+  status: z.string().trim().min(1, "Status is required"),
   importance: z.union([z.enum(["s", "a", "b", "c", "f"]), z.literal("")]).optional(),
 });
 
@@ -55,10 +58,18 @@ interface SpeakerFormProps {
   onOpenChange: (open: boolean) => void;
   speaker?: SpeakerWithRelations | null;
   allTags: Tag[];
+  statuses?: SpeakerStatusOption[];
   onSaved?: () => void;
 }
 
-export function SpeakerForm({ open, onOpenChange, speaker, allTags, onSaved }: SpeakerFormProps) {
+export function SpeakerForm({
+  open,
+  onOpenChange,
+  speaker,
+  allTags,
+  statuses: propStatuses,
+  onSaved,
+}: SpeakerFormProps) {
   const profile = useProfile();
   const isEdit = Boolean(speaker);
 
@@ -67,12 +78,19 @@ export function SpeakerForm({ open, onOpenChange, speaker, allTags, onSaved }: S
     speaker?.speaker_links.map((l) => ({ platform: l.platform, url: l.url, label: l.label })) ?? []
   );
   const [tagNames, setTagNames] = useState<string[]>(speaker?.tags.map((t) => t.name) ?? []);
+  const [localStatuses, setLocalStatuses] = useState<SpeakerStatusOption[]>(
+    propStatuses && propStatuses.length > 0 ? propStatuses : DEFAULT_STATUSES
+  );
+  const [addingStatus, setAddingStatus] = useState(false);
+  const [newStatusLabel, setNewStatusLabel] = useState("");
+  const [creatingStatus, setCreatingStatus] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
   const {
     register,
     handleSubmit,
     control,
+    setValue,
     formState: { errors },
   } = useForm<FormValues>({
     resolver: zodResolver(schema),
@@ -85,15 +103,33 @@ export function SpeakerForm({ open, onOpenChange, speaker, allTags, onSaved }: S
       bio: speaker?.bio ?? "",
       idea_text: speaker?.idea_text ?? "",
       experience_text: speaker?.experience_text ?? "",
+      custom_message: speaker?.custom_message ?? "",
       status: speaker?.status ?? "no_reply",
       importance: speaker?.importance ?? "",
     },
   });
 
-  // No reset-on-open effect: the parent remounts this component (via a
-  // `key` tied to the target speaker) whenever a different speaker is being
-  // edited or the "add" dialog is reopened, so the useState/useForm initial
-  // values above are already correct on every mount.
+  async function handleAddNewStatus() {
+    const trimmed = newStatusLabel.trim();
+    if (!trimmed || creatingStatus) return;
+
+    setCreatingStatus(true);
+    try {
+      const supabase = createClient();
+      const created = await createStatusOption(supabase, trimmed);
+      setLocalStatuses((prev) =>
+        prev.some((s) => s.slug === created.slug) ? prev : [...prev, created]
+      );
+      setValue("status", created.slug);
+      setNewStatusLabel("");
+      setAddingStatus(false);
+      toast.success(`Status "${created.label}" added`);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Couldn't create status.");
+    } finally {
+      setCreatingStatus(false);
+    }
+  }
 
   async function onSubmit(values: FormValues) {
     setSubmitting(true);
@@ -109,6 +145,7 @@ export function SpeakerForm({ open, onOpenChange, speaker, allTags, onSaved }: S
       bio: values.bio || null,
       idea_text: values.idea_text || null,
       experience_text: values.experience_text || null,
+      custom_message: values.custom_message || null,
       status: values.status as SpeakerStatus,
       importance: (values.importance || null) as SpeakerTier | null,
       links: links.filter((l) => l.url.trim().length > 0),
@@ -138,7 +175,9 @@ export function SpeakerForm({ open, onOpenChange, speaker, allTags, onSaved }: S
         <DialogHeader>
           <DialogTitle>{isEdit ? "Edit speaker" : "Add a speaker"}</DialogTitle>
           <DialogDescription>
-            {isEdit ? "Update their details below." : "Fill in what you know — you can always add more later."}
+            {isEdit
+              ? "Update their details below."
+              : "Fill in what you know — you'll automatically be assigned as the default tracker for this speaker."}
           </DialogDescription>
         </DialogHeader>
 
@@ -180,25 +219,55 @@ export function SpeakerForm({ open, onOpenChange, speaker, allTags, onSaved }: S
 
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
-              <Label htmlFor="status">Status</Label>
-              <Controller
-                control={control}
-                name="status"
-                render={({ field }) => (
-                  <Select value={field.value} onValueChange={field.onChange}>
-                    <SelectTrigger id="status">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {(Object.keys(STATUS_LABELS) as SpeakerStatus[]).map((s) => (
-                        <SelectItem key={s} value={s}>
-                          {STATUS_LABELS[s]}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                )}
-              />
+              <div className="flex items-center justify-between">
+                <Label htmlFor="status">Status</Label>
+                <button
+                  type="button"
+                  onClick={() => setAddingStatus((v) => !v)}
+                  className="flex items-center gap-0.5 text-[11px] font-medium text-red-300 hover:text-red-200"
+                >
+                  <Plus className="h-3 w-3" /> New status
+                </button>
+              </div>
+              {addingStatus ? (
+                <div className="flex items-center gap-1.5">
+                  <Input
+                    value={newStatusLabel}
+                    onChange={(e) => setNewStatusLabel(e.target.value)}
+                    placeholder="Status name…"
+                    className="h-9 text-xs"
+                  />
+                  <Button
+                    type="button"
+                    size="sm"
+                    onClick={handleAddNewStatus}
+                    loading={creatingStatus}
+                    disabled={!newStatusLabel.trim()}
+                    className="h-9 px-2.5 text-xs"
+                  >
+                    Add
+                  </Button>
+                </div>
+              ) : (
+                <Controller
+                  control={control}
+                  name="status"
+                  render={({ field }) => (
+                    <Select value={field.value} onValueChange={field.onChange}>
+                      <SelectTrigger id="status">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {localStatuses.map((s) => (
+                          <SelectItem key={s.slug} value={s.slug}>
+                            {s.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+                />
+              )}
             </div>
 
             <div className="space-y-1.5">
@@ -242,6 +311,15 @@ export function SpeakerForm({ open, onOpenChange, speaker, allTags, onSaved }: S
               id="experience"
               {...register("experience_text")}
               placeholder="Speaking experience, notable background…"
+            />
+          </div>
+
+          <div className="space-y-1.5">
+            <Label htmlFor="custom_message">Custom message for this speaker</Label>
+            <Textarea
+              id="custom_message"
+              {...register("custom_message")}
+              placeholder="Tailored outreach message or pitch specifically for this speaker (for LinkedIn, Instagram, Email…)"
             />
           </div>
 

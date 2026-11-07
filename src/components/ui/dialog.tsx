@@ -16,16 +16,16 @@ export function DialogContent({
 }: React.ComponentProps<typeof DialogPrimitive.Content>) {
   return (
     <DialogPrimitive.Portal>
-      <DialogPrimitive.Overlay className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm data-[state=open]:animate-fade-in" />
+      <DialogPrimitive.Overlay className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm data-[state=open]:animate-fade-in" />
       <DialogPrimitive.Content
         className={cn(
-          "fixed left-1/2 top-1/2 z-50 w-full max-w-lg -translate-x-1/2 -translate-y-1/2 rounded-2xl border border-border bg-surface-1 p-6 shadow-2xl data-[state=open]:animate-scale-in max-h-[85vh] overflow-y-auto",
+          "fixed left-1/2 top-1/2 z-50 w-[calc(100%-2rem)] max-w-lg -translate-x-1/2 -translate-y-1/2 rounded-2xl border border-[#3E2527] bg-gradient-to-b from-[#1B1213] to-[#120C0D] p-6 shadow-[0_24px_64px_-12px_rgba(0,0,0,0.9),0_1px_0_0_rgba(255,255,255,0.06)_inset] data-[state=open]:animate-scale-in max-h-[88vh] overflow-y-auto",
           className
         )}
         {...props}
       >
         {children}
-        <DialogPrimitive.Close className="absolute right-4 top-4 rounded-md p-1 text-text-tertiary transition-colors hover:bg-surface-2 hover:text-text-primary">
+        <DialogPrimitive.Close className="absolute right-4 top-4 rounded-lg p-1.5 text-text-tertiary transition-colors hover:bg-surface-2 hover:text-text-primary">
           <X className="h-4 w-4" />
         </DialogPrimitive.Close>
       </DialogPrimitive.Content>

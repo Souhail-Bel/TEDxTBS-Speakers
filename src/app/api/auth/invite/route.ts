@@ -34,6 +34,12 @@ export async function POST(request: Request) {
   const role = body?.role === "admin" ? "admin" : "member";
   const phone = typeof body?.phone === "string" ? body.phone.trim() || null : null;
   const facebookUrl = typeof body?.facebookUrl === "string" ? body.facebookUrl.trim() || null : null;
+  const avatarUrl = typeof body?.avatarUrl === "string" ? body.avatarUrl.trim() || null : null;
+  const bio = typeof body?.bio === "string" ? body.bio.trim() || null : null;
+  const contactedCount =
+    typeof body?.contactedCount === "number" && Number.isFinite(body.contactedCount)
+      ? Math.max(0, Math.floor(body.contactedCount))
+      : null;
   const mode = body?.mode === "temp_password" ? "temp_password" : "invite";
 
   if (!email || !fullName) {
@@ -81,8 +87,17 @@ export async function POST(request: Request) {
 
   // The on_auth_user_created trigger already created the profiles row from
   // user_metadata; fill in the extra fields it doesn't know about.
-  if (phone || facebookUrl) {
-    await admin.from("profiles").update({ phone, facebook_url: facebookUrl }).eq("id", newUserId);
+  if (phone || facebookUrl || avatarUrl || bio || contactedCount !== null) {
+    await admin
+      .from("profiles")
+      .update({
+        phone,
+        facebook_url: facebookUrl,
+        avatar_url: avatarUrl,
+        bio,
+        contacted_count: contactedCount,
+      })
+      .eq("id", newUserId);
   }
 
   await writeAuditLog(supabase, {

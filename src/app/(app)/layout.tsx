@@ -1,8 +1,7 @@
 import { requireProfile } from "@/lib/auth/getProfile";
 import { createClient } from "@/lib/supabase/server";
 import { ProfileProvider } from "@/components/auth/ProfileProvider";
-import { Navbar } from "@/components/layout/Navbar";
-import { EventBanner } from "@/components/layout/EventBanner";
+import { AppShell } from "@/components/layout/AppShell";
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const profile = await requireProfile();
@@ -15,11 +14,9 @@ export default async function AppLayout({ children }: { children: React.ReactNod
 
   return (
     <ProfileProvider profile={profile}>
-      <div className="flex min-h-screen flex-col">
-        <Navbar />
-        <EventBanner eventDate={eventSettings?.event_date ?? null} />
-        <main className="mx-auto w-full max-w-7xl flex-1 px-4 py-6">{children}</main>
-      </div>
+      <AppShell eventDate={eventSettings?.event_date ?? null}>
+        {children}
+      </AppShell>
     </ProfileProvider>
   );
 }

@@ -12,24 +12,42 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Input, Label } from "@/components/ui/input";
+import { Input, Label, Textarea } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { ImageCropUploader } from "@/components/media/ImageCropUploader";
 import type { Profile } from "@/lib/types";
 
 interface TeamMemberFormProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   member?: Profile | null;
+  computedContactedCount?: number;
   currentUserId: string;
+  isAdmin?: boolean;
   onSaved?: () => void;
 }
 
-export function TeamMemberForm({ open, onOpenChange, member, currentUserId, onSaved }: TeamMemberFormProps) {
+export function TeamMemberForm({
+  open,
+  onOpenChange,
+  member,
+  computedContactedCount = 0,
+  currentUserId,
+  isAdmin = true,
+  onSaved,
+}: TeamMemberFormProps) {
   const isEdit = Boolean(member);
 
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(member?.avatar_url ?? null);
   const [fullName, setFullName] = useState(member?.full_name ?? "");
   const [email, setEmail] = useState(member?.email ?? "");
   const [phone, setPhone] = useState(member?.phone ?? "");
+  const [bio, setBio] = useState(member?.bio ?? "");
+  const [contactedCount, setContactedCount] = useState<string>(
+    member?.contacted_count !== null && member?.contacted_count !== undefined
+      ? String(member.contacted_count)
+      : ""
+  );
   const [facebookUrl, setFacebookUrl] = useState(member?.facebook_url ?? "");
   const [role, setRole] = useState<"admin" | "member">(member?.role ?? "member");
   const [mode, setMode] = useState<"invite" | "temp_password">("invite");
@@ -38,14 +56,13 @@ export function TeamMemberForm({ open, onOpenChange, member, currentUserId, onSa
   const [tempPassword, setTempPassword] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
 
-  // No reset-on-open effect: the parent remounts this component (via a
-  // `key` bumped on each "add"/"edit" click) whenever it's reopened, so the
-  // useState initial values above are already correct on every mount.
-
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
     setSubmitting(true);
+
+    const parsedContacted =
+      contactedCount.trim() === "" ? null : Math.max(0, parseInt(contactedCount, 10) || 0);
 
     try {
       if (isEdit && member) {
@@ -56,7 +73,10 @@ export function TeamMemberForm({ open, onOpenChange, member, currentUserId, onSa
             fullName,
             phone,
             facebookUrl,
-            role: member.id === currentUserId ? undefined : role,
+            avatarUrl,
+            bio,
+            contactedCount: parsedContacted,
+            role: !isAdmin || member.id === currentUserId ? undefined : role,
           }),
         });
         const data = await res.json();
@@ -68,7 +88,17 @@ export function TeamMemberForm({ open, onOpenChange, member, currentUserId, onSa
         const res = await fetch("/api/auth/invite", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email, fullName, role, phone, facebookUrl, mode }),
+          body: JSON.stringify({
+            email,
+            fullName,
+            role,
+            phone,
+            facebookUrl,
+            avatarUrl,
+            bio,
+            contactedCount: parsedContacted,
+            mode,
+          }),
         });
         const data = await res.json();
         if (!res.ok) throw new Error(data.error ?? "Couldn't add that team member.");
@@ -76,9 +106,6 @@ export function TeamMemberForm({ open, onOpenChange, member, currentUserId, onSa
         if (mode === "temp_password" && data.tempPassword) {
           setTempPassword(data.tempPassword);
           toast.success(`${fullName} added`, { description: "Share the temporary password with them securely." });
-          // Don't call onSaved() yet — it triggers a full page reload, which
-          // would wipe this screen before the password can be read or
-          // copied. It fires instead when they dismiss via "Done" below.
         } else {
           toast.success(`Invite sent to ${email}`);
           onOpenChange(false);
@@ -102,11 +129,13 @@ export function TeamMemberForm({ open, onOpenChange, member, currentUserId, onSa
 
   return (
     <Dialog open={open} onOpenChange={(o) => !submitting && onOpenChange(o)}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="max-w-lg">
         <DialogHeader>
-          <DialogTitle>{isEdit ? "Edit team member" : "Add a team member"}</DialogTitle>
+          <DialogTitle>{isEdit ? "Edit team member profile" : "Add a team member"}</DialogTitle>
           <DialogDescription>
-            {isEdit ? "Update their details below." : "They'll get an email to set their own password."}
+            {isEdit
+              ? "Update their picture, bio, phone number, and number of speakers contacted."
+              : "Add their profile details and choose how to set up their account."}
           </DialogDescription>
         </DialogHeader>
 
@@ -139,25 +168,66 @@ export function TeamMemberForm({ open, onOpenChange, member, currentUserId, onSa
         ) : (
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-1.5">
-              <Label htmlFor="fullName">Full name *</Label>
-              <Input id="fullName" required value={fullName} onChange={(e) => setFullName(e.target.value)} />
+              <Label>Profile picture</Label>
+              <ImageCropUploader value={avatarUrl} onChange={setAvatarUrl} />
+            </div>
+
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <div className="space-y-1.5">
+                <Label htmlFor="fullName">Full name *</Label>
+                <Input
+                  id="fullName"
+                  required
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <Label htmlFor="email">Email *</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  required
+                  disabled={isEdit}
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                />
+              </div>
             </div>
 
             <div className="space-y-1.5">
-              <Label htmlFor="email">Email *</Label>
-              <Input
-                id="email"
-                type="email"
-                required
-                disabled={isEdit}
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
+              <Label htmlFor="bio">Who are they (Role / Bio)</Label>
+              <Textarea
+                id="bio"
+                value={bio}
+                onChange={(e) => setBio(e.target.value)}
+                placeholder="Who are they? e.g. Speaker Curation Lead, TBS Junior, responsible for tech & entrepreneurship speakers…"
               />
             </div>
 
-            <div className="space-y-1.5">
-              <Label htmlFor="phone">Phone</Label>
-              <Input id="phone" value={phone ?? ""} onChange={(e) => setPhone(e.target.value)} placeholder="Optional" />
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <div className="space-y-1.5">
+                <Label htmlFor="phone">Phone number</Label>
+                <Input
+                  id="phone"
+                  value={phone ?? ""}
+                  onChange={(e) => setPhone(e.target.value)}
+                  placeholder="+216 …"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <Label htmlFor="contactedCount">Speakers contacted</Label>
+                <Input
+                  id="contactedCount"
+                  type="number"
+                  min={0}
+                  value={contactedCount}
+                  onChange={(e) => setContactedCount(e.target.value)}
+                  placeholder={`Auto (${computedContactedCount} tracked)`}
+                />
+              </div>
             </div>
 
             <div className="space-y-1.5">
@@ -170,7 +240,7 @@ export function TeamMemberForm({ open, onOpenChange, member, currentUserId, onSa
               />
             </div>
 
-            {(!isEdit || member?.id !== currentUserId) && (
+            {isAdmin && (!isEdit || member?.id !== currentUserId) && (
               <div className="space-y-1.5">
                 <Label htmlFor="role">Privilege level</Label>
                 <Select value={role} onValueChange={(v) => setRole(v as "admin" | "member")}>

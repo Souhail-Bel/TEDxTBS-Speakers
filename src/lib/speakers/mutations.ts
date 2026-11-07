@@ -1,5 +1,12 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import type { LinkPlatform, SpeakerStatus, SpeakerTier, Tag } from "@/lib/types";
+import type {
+  LinkPlatform,
+  RuleOrWarningItem,
+  SpeakerStatus,
+  SpeakerStatusOption,
+  SpeakerTier,
+  Tag,
+} from "@/lib/types";
 import { writeAuditLog } from "@/lib/audit/log";
 
 type DB = SupabaseClient;
@@ -14,6 +21,7 @@ export interface SpeakerFormInput {
   bio: string | null;
   idea_text: string | null;
   experience_text: string | null;
+  custom_message?: string | null;
   status: SpeakerStatus;
   importance: SpeakerTier | null;
   links: { platform: LinkPlatform; url: string; label: string | null }[];
@@ -29,6 +37,12 @@ export async function createSpeaker(supabase: DB, actorId: string, input: Speake
     .select()
     .single();
   if (error) throw error;
+
+  // Ensure the creator is always set as the default tracker for the speaker.
+  await supabase.from("speaker_trackers").upsert(
+    { speaker_id: speaker.id, profile_id: actorId, source: "manual" },
+    { onConflict: "speaker_id,profile_id", ignoreDuplicates: true }
+  );
 
   if (links.length > 0) {
     const { error: linksError } = await supabase
@@ -98,6 +112,27 @@ export async function updateSpeaker(
   }
 }
 
+export async function updateSpeakerCustomMessage(
+  supabase: DB,
+  actorId: string,
+  speakerId: string,
+  customMessage: string | null
+) {
+  const { error } = await supabase
+    .from("speakers")
+    .update({ custom_message: customMessage })
+    .eq("id", speakerId);
+  if (error) throw error;
+
+  await writeAuditLog(supabase, {
+    actorId,
+    action: "speaker.updated",
+    entityType: "speaker",
+    entityId: speakerId,
+    metadata: { field: "custom_message" },
+  });
+}
+
 export async function updateSpeakerStatus(
   supabase: DB,
   actorId: string,
@@ -115,6 +150,75 @@ export async function updateSpeakerStatus(
     entityId: speakerId,
     metadata: { from, to },
   });
+}
+
+export async function createStatusOption(
+  supabase: DB,
+  label: string,
+  color?: string | null
+): Promise<SpeakerStatusOption> {
+  const trimmed = label.trim();
+  if (!trimmed) throw new Error("Status name cannot be empty.");
+
+  const baseSlug = trimmed
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "_")
+    .replace(/^_+|_+$/g, "");
+  const slug = baseSlug || `status_${Date.now()}`;
+
+  const { data: existing } = await supabase
+    .from("speaker_statuses")
+    .select("*")
+    .order("position", { ascending: false })
+    .limit(1);
+
+  const nextPos = existing && existing.length > 0 ? (existing[0].position ?? 0) + 1 : 4;
+
+  const { data, error } = await supabase
+    .from("speaker_statuses")
+    .upsert(
+      {
+        slug,
+        label: trimmed,
+        color: color ?? null,
+        position: nextPos,
+        is_builtin: false,
+      },
+      { onConflict: "slug" }
+    )
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data as SpeakerStatusOption;
+}
+
+export async function deleteStatusOption(supabase: DB, slug: string) {
+  // Move any speakers currently in this custom status back to 'no_reply'
+  const { error: reassignError } = await supabase
+    .from("speakers")
+    .update({ status: "no_reply" })
+    .eq("status", slug);
+  if (reassignError) throw reassignError;
+
+  const { error } = await supabase
+    .from("speaker_statuses")
+    .delete()
+    .eq("slug", slug)
+    .eq("is_builtin", false);
+  if (error) throw error;
+}
+
+export async function updateRulesAndWarnings(supabase: DB, actorId: string, items: RuleOrWarningItem[]) {
+  const { error } = await supabase
+    .from("event_settings")
+    .update({
+      rules_and_warnings: items,
+      updated_by: actorId,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", 1);
+  if (error) throw error;
 }
 
 /** Finds existing tags by (case-insensitive) name, creates the rest, links them all to the speaker. */

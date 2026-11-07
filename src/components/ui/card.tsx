@@ -5,7 +5,7 @@ export function Card({ className, ...props }: React.HTMLAttributes<HTMLDivElemen
   return (
     <div
       className={cn(
-        "rounded-2xl border border-border bg-surface-1 shadow-[0_1px_0_0_rgba(255,255,255,0.03)_inset]",
+        "tedx-surface rounded-2xl transition-colors duration-200",
         className
       )}
       {...props}
@@ -16,7 +16,7 @@ export function Card({ className, ...props }: React.HTMLAttributes<HTMLDivElemen
 export function Skeleton({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
   return (
     <div
-      className={cn("animate-pulse rounded-md bg-surface-3", className)}
+      className={cn("animate-pulse rounded-lg bg-surface-2", className)}
       {...props}
     />
   );

@@ -12,105 +12,235 @@ import {
   Shield,
   UserMinus,
   PlusCircle,
+  History,
+  Search,
+  ArrowRight,
 } from "lucide-react";
 import { InitialsAvatar } from "@/components/ui/avatar";
-import { Card } from "@/components/ui/card";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import type { AuditLogEntryWithActor } from "@/lib/audit/queries";
 import type { AuditAction } from "@/lib/audit/log";
 
 const ACTION_META: Record<
   AuditAction,
-  { label: string; icon: React.ComponentType<{ className?: string }>; color: string }
+  {
+    label: string;
+    icon: React.ComponentType<{ className?: string }>;
+    wrapClass: string;
+  }
 > = {
-  "speaker.created": { label: "Added speaker", icon: PlusCircle, color: "text-status-accepted" },
-  "speaker.updated": { label: "Updated speaker", icon: Pencil, color: "text-text-secondary" },
-  "speaker.status_changed": { label: "Changed status", icon: CheckCircle2, color: "text-status-unclear" },
-  "speaker.tag_added": { label: "Added tag", icon: TagIcon, color: "text-text-secondary" },
-  "speaker.tag_removed": { label: "Removed tag", icon: TagIcon, color: "text-text-secondary" },
-  "speaker.delete_requested": { label: "Moved speaker to trash", icon: Trash2, color: "text-status-refused" },
-  "speaker.delete_confirmed": { label: "Permanently deleted speaker", icon: Trash2, color: "text-status-refused" },
-  "speaker.restored": { label: "Restored speaker", icon: RotateCcw, color: "text-status-accepted" },
-  "team_member.invited": { label: "Invited team member", icon: UserPlus, color: "text-status-accepted" },
-  "team_member.updated": { label: "Updated team member", icon: Pencil, color: "text-text-secondary" },
-  "team_member.removed": { label: "Removed team member", icon: UserMinus, color: "text-status-refused" },
-  "team_member.role_changed": { label: "Changed role", icon: Shield, color: "text-red-400" },
+  "speaker.created": {
+    label: "Added speaker",
+    icon: PlusCircle,
+    wrapClass: "border-[#22C55E]/30 bg-[#22C55E]/12 text-[#22C55E]",
+  },
+  "speaker.updated": {
+    label: "Updated speaker",
+    icon: Pencil,
+    wrapClass: "border-[#382626] bg-[#1E1415] text-[#C8C0C0]",
+  },
+  "speaker.status_changed": {
+    label: "Changed status",
+    icon: CheckCircle2,
+    wrapClass: "border-[#F59E0B]/30 bg-[#F59E0B]/12 text-[#F59E0B]",
+  },
+  "speaker.tag_added": {
+    label: "Added tag",
+    icon: TagIcon,
+    wrapClass: "border-[#382626] bg-[#1E1415] text-[#C8C0C0]",
+  },
+  "speaker.tag_removed": {
+    label: "Removed tag",
+    icon: TagIcon,
+    wrapClass: "border-[#382626] bg-[#1E1415] text-[#8A8282]",
+  },
+  "speaker.delete_requested": {
+    label: "Moved speaker to trash",
+    icon: Trash2,
+    wrapClass: "border-[#EF4444]/30 bg-[#EF4444]/12 text-[#EF4444]",
+  },
+  "speaker.delete_confirmed": {
+    label: "Permanently deleted speaker",
+    icon: Trash2,
+    wrapClass: "border-[#EF4444]/40 bg-[#EF4444]/18 text-[#FF5C6C]",
+  },
+  "speaker.restored": {
+    label: "Restored speaker",
+    icon: RotateCcw,
+    wrapClass: "border-[#22C55E]/30 bg-[#22C55E]/12 text-[#22C55E]",
+  },
+  "team_member.invited": {
+    label: "Invited team member",
+    icon: UserPlus,
+    wrapClass: "border-[#22C55E]/30 bg-[#22C55E]/12 text-[#22C55E]",
+  },
+  "team_member.updated": {
+    label: "Updated team member",
+    icon: Pencil,
+    wrapClass: "border-[#382626] bg-[#1E1415] text-[#C8C0C0]",
+  },
+  "team_member.removed": {
+    label: "Removed team member",
+    icon: UserMinus,
+    wrapClass: "border-[#EF4444]/30 bg-[#EF4444]/12 text-[#EF4444]",
+  },
+  "team_member.role_changed": {
+    label: "Changed role",
+    icon: Shield,
+    wrapClass: "border-[#E31B2B]/35 bg-[#E31B2B]/15 text-[#FF5C6C]",
+  },
 };
 
 export function AuditLogClient({ entries }: { entries: AuditLogEntryWithActor[] }) {
   const [filter, setFilter] = useState<"all" | "speaker" | "profile">("all");
+  const [search, setSearch] = useState("");
 
   const filtered = useMemo(() => {
-    if (filter === "all") return entries;
-    return entries.filter((e) => e.entity_type === filter);
-  }, [entries, filter]);
+    const q = search.trim().toLowerCase();
+    return entries.filter((e) => {
+      if (filter !== "all" && e.entity_type !== filter) return false;
+      if (!q) return true;
+      const actor = (e.actor?.full_name ?? "").toLowerCase();
+      const target = typeof e.metadata?.name === "string" ? e.metadata.name.toLowerCase() : "";
+      const action = e.action.toLowerCase();
+      return actor.includes(q) || target.includes(q) || action.includes(q);
+    });
+  }, [entries, filter, search]);
 
   return (
-    <div className="space-y-5">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-lg font-semibold text-text-primary">Audit log</h1>
-          <p className="text-sm text-text-tertiary">Who did what, and when — most recent 200 actions.</p>
+    <div className="space-y-6">
+      {/* Page Header */}
+      <div className="relative overflow-hidden rounded-2xl border border-[#382325] bg-gradient-to-br from-[#201214] via-[#140D0E] to-[#0D0909] p-6 sm:p-7">
+        <div
+          className="pointer-events-none absolute -top-20 -right-16 h-56 w-56 rounded-full blur-3xl"
+          style={{ background: "radial-gradient(circle, rgba(227,27,43,0.18) 0%, transparent 70%)" }}
+          aria-hidden="true"
+        />
+        <div className="relative flex items-start gap-4">
+          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-[#E31B2B]/35 bg-[#E31B2B]/15 text-[#FF3B4E]">
+            <History className="h-6 w-6" />
+          </div>
+          <div>
+            <div className="flex flex-wrap items-center gap-2.5">
+              <h1 className="text-2xl font-bold tracking-tight text-[#F5F5F5] sm:text-3xl">
+                Audit <span className="text-[#E31B2B]">Log</span>
+              </h1>
+              <span className="rounded-full border border-[#382626] bg-[#1E1415] px-2.5 py-0.5 text-xs font-semibold text-[#C8C0C0]">
+                {filtered.length} events
+              </span>
+            </div>
+            <p className="mt-1 text-xs sm:text-sm text-[#A6A0A0]">
+              Chronological record of speaker pipeline updates, status transitions, and team administration (latest 200 events).
+            </p>
+          </div>
         </div>
+      </div>
+
+      {/* Filters Toolbar */}
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="relative flex-1 max-w-md">
+          <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[#888080]" />
+          <Input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Filter by coordinator, speaker name, or action…"
+            className="h-10 rounded-xl border-[#332323] bg-[#120C0D] pl-10 text-sm"
+          />
+        </div>
+
         <Select value={filter} onValueChange={(v) => setFilter(v as typeof filter)}>
-          <SelectTrigger className="w-44">
+          <SelectTrigger className="h-10 w-48 rounded-xl border-[#332323] bg-[#140D0E] text-xs font-medium">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All activity</SelectItem>
+            <SelectItem value="all">All platform activity</SelectItem>
             <SelectItem value="speaker">Speaker changes</SelectItem>
             <SelectItem value="profile">Team changes</SelectItem>
           </SelectContent>
         </Select>
       </div>
 
-      <Card className="divide-y divide-border-subtle">
+      {/* Chronological Event Feed */}
+      <div className="tedx-table-shell overflow-hidden rounded-2xl divide-y divide-[#221617]">
         {filtered.length === 0 ? (
-          <p className="px-4 py-10 text-center text-sm text-text-tertiary">No activity yet.</p>
+          <div className="px-6 py-16 text-center">
+            <p className="text-sm font-medium text-[#A6A0A0]">No matching audit entries.</p>
+          </div>
         ) : (
           filtered.map((entry) => {
             const meta = ACTION_META[entry.action as AuditAction] ?? {
               label: entry.action,
               icon: Pencil,
-              color: "text-text-secondary",
+              wrapClass: "border-[#382626] bg-[#1E1415] text-[#C8C0C0]",
             };
             const Icon = meta.icon;
             return (
-              <div key={entry.id} className="flex items-start gap-3 px-4 py-3">
-                <div className={`mt-0.5 ${meta.color}`}>
+              <div
+                key={entry.id}
+                className="flex items-center gap-4 px-5 py-3.5 transition-colors hover:bg-[#1B1213]/80"
+              >
+                <div
+                  className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border ${meta.wrapClass}`}
+                >
                   <Icon className="h-4 w-4" />
                 </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm text-text-primary">
-                    <span className="font-medium">{entry.actor?.full_name ?? "Deleted user"}</span>{" "}
-                    <span className="text-text-secondary">{meta.label.toLowerCase()}</span>
+
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm text-[#E5E0E0]">
+                    <span className="font-semibold text-[#F5F5F5]">
+                      {entry.actor?.full_name ?? "Deleted user"}
+                    </span>{" "}
+                    <span className="text-[#A6A0A0]">{meta.label.toLowerCase()}</span>
                     {typeof entry.metadata?.name === "string" && (
                       <>
                         {" "}
-                        <span className="text-text-primary">&quot;{entry.metadata.name as string}&quot;</span>
+                        <span className="font-semibold text-[#FF7583]">
+                          “{entry.metadata.name as string}”
+                        </span>
                       </>
                     )}
                   </p>
+
                   {entry.action === "speaker.status_changed" &&
                     typeof entry.metadata?.from === "string" &&
                     typeof entry.metadata?.to === "string" && (
-                      <p className="text-xs text-text-tertiary">
-                        {entry.metadata.from as string} &rarr; {entry.metadata.to as string}
-                      </p>
+                      <div className="mt-1 inline-flex items-center gap-1.5 rounded-md border border-[#322122] bg-[#120C0D] px-2 py-0.5 text-[11px] text-[#C8C0C0]">
+                        <span>{entry.metadata.from as string}</span>
+                        <ArrowRight className="h-3 w-3 text-[#E31B2B]" />
+                        <span className="font-semibold text-[#F5F5F5]">
+                          {entry.metadata.to as string}
+                        </span>
+                      </div>
                     )}
-                  <p
-                    className="mt-0.5 text-xs text-text-tertiary"
+                </div>
+
+                <div className="flex shrink-0 items-center gap-3">
+                  <span
+                    className="hidden text-xs text-[#8A8282] sm:inline"
                     title={format(new Date(entry.created_at), "PPpp")}
                   >
-                    {formatDistanceToNow(new Date(entry.created_at), { addSuffix: true })}
-                  </p>
+                    {formatDistanceToNow(new Date(entry.created_at), {
+                      addSuffix: true,
+                    }).replace(/^about\s+/i, "")}
+                  </span>
+                  <InitialsAvatar
+                    name={entry.actor?.full_name ?? "?"}
+                    src={entry.actor?.avatar_url}
+                    size="xs"
+                  />
                 </div>
-                <InitialsAvatar name={entry.actor?.full_name ?? "?"} size="xs" />
               </div>
             );
           })
         )}
-      </Card>
+      </div>
     </div>
   );
 }

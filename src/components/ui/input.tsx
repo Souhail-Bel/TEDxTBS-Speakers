@@ -10,8 +10,8 @@ export const Input = React.forwardRef<
       type={type}
       ref={ref}
       className={cn(
-        "flex h-10 w-full rounded-lg border border-border bg-surface-1 px-3 text-sm text-text-primary placeholder:text-text-tertiary transition-colors duration-150 outline-none",
-        "focus-visible:border-red-500 focus-visible:ring-2 focus-visible:ring-red-500/30",
+        "flex h-10 w-full rounded-xl border border-border bg-[#140E0E]/90 px-3.5 text-sm text-text-primary placeholder:text-text-tertiary transition-all duration-150 outline-none",
+        "hover:border-[#462C2E] focus-visible:border-red-500 focus-visible:ring-2 focus-visible:ring-red-500/25",
         "disabled:cursor-not-allowed disabled:opacity-50",
         className
       )}
@@ -29,8 +29,8 @@ export const Textarea = React.forwardRef<
     <textarea
       ref={ref}
       className={cn(
-        "flex min-h-20 w-full rounded-lg border border-border bg-surface-1 px-3 py-2 text-sm text-text-primary placeholder:text-text-tertiary transition-colors duration-150 outline-none resize-y",
-        "focus-visible:border-red-500 focus-visible:ring-2 focus-visible:ring-red-500/30",
+        "flex min-h-20 w-full rounded-xl border border-border bg-[#140E0E]/90 px-3.5 py-2.5 text-sm text-text-primary placeholder:text-text-tertiary transition-all duration-150 outline-none resize-y",
+        "hover:border-[#462C2E] focus-visible:border-red-500 focus-visible:ring-2 focus-visible:ring-red-500/25",
         "disabled:cursor-not-allowed disabled:opacity-50",
         className
       )}
@@ -46,7 +46,7 @@ export const Label = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <label
     ref={ref}
-    className={cn("text-sm font-medium text-text-secondary", className)}
+    className={cn("text-xs font-medium tracking-wide text-text-secondary", className)}
     {...props}
   />
 ));

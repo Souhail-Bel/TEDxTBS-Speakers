@@ -1,11 +1,25 @@
-// Hand-written mirror of the Supabase schema (supabase/migrations/0001_schema.sql).
-// If the schema changes, update this file to match — or swap it for output from
-// `supabase gen types typescript` once the Supabase CLI is linked to the project.
+// Hand-written mirror of the Supabase schema (supabase/migrations/).
 
 export type UserRole = "admin" | "member";
-export type SpeakerStatus = "no_reply" | "accepted" | "refused" | "unclear";
+export type BuiltinSpeakerStatus = "no_reply" | "accepted" | "refused" | "unclear";
+export type SpeakerStatus = BuiltinSpeakerStatus | (string & {});
 export type LinkPlatform = "linkedin" | "facebook" | "x" | "instagram" | "website" | "other";
 export type SpeakerTier = "s" | "a" | "b" | "c" | "f";
+
+export interface SpeakerStatusOption {
+  slug: string;
+  label: string;
+  color: string | null;
+  position: number;
+  is_builtin: boolean;
+  created_at?: string;
+}
+
+export interface RuleOrWarningItem {
+  id: string;
+  type: "rule" | "warning";
+  text: string;
+}
 
 export interface Profile {
   id: string;
@@ -13,6 +27,9 @@ export interface Profile {
   email: string;
   phone: string | null;
   facebook_url: string | null;
+  avatar_url: string | null;
+  bio: string | null;
+  contacted_count: number | null;
   role: UserRole;
   created_at: string;
   updated_at: string;
@@ -28,6 +45,7 @@ export interface Speaker {
   phone: string | null;
   idea_text: string | null;
   experience_text: string | null;
+  custom_message: string | null;
   status: SpeakerStatus;
   importance: SpeakerTier | null;
   bio: string | null;
@@ -88,6 +106,7 @@ export interface AuditLogEntry {
 export interface EventSettings {
   id: 1;
   event_date: string | null;
+  rules_and_warnings: RuleOrWarningItem[];
   updated_by: string | null;
   updated_at: string;
 }
@@ -99,22 +118,40 @@ export interface EventSettings {
 export interface SpeakerWithRelations extends Speaker {
   speaker_links: SpeakerLink[];
   tags: Tag[];
-  trackers: (SpeakerTracker & { profile: Pick<Profile, "id" | "full_name"> | null })[];
-  added_by_profile: Pick<Profile, "id" | "full_name"> | null;
-  deleted_by_profile: Pick<Profile, "id" | "full_name"> | null;
+  trackers: (SpeakerTracker & { profile: Pick<Profile, "id" | "full_name" | "avatar_url"> | null })[];
+  added_by_profile: Pick<Profile, "id" | "full_name" | "avatar_url"> | null;
+  deleted_by_profile: Pick<Profile, "id" | "full_name" | "avatar_url"> | null;
   comment_count: number;
 }
 
 export interface CommentWithAuthor extends Comment {
-  author: Pick<Profile, "id" | "full_name" | "role"> | null;
+  author: Pick<Profile, "id" | "full_name" | "role" | "avatar_url"> | null;
 }
 
-export const STATUS_LABELS: Record<SpeakerStatus, string> = {
+export const STATUS_LABELS: Record<string, string> = {
   no_reply: "No reply yet",
   accepted: "Accepted",
   refused: "Refused",
   unclear: "Unclear",
 };
+
+export const DEFAULT_STATUSES: SpeakerStatusOption[] = [
+  { slug: "no_reply", label: "No reply yet", color: null, position: 0, is_builtin: true },
+  { slug: "unclear", label: "Unclear", color: null, position: 1, is_builtin: true },
+  { slug: "accepted", label: "Accepted", color: null, position: 2, is_builtin: true },
+  { slug: "refused", label: "Refused", color: null, position: 3, is_builtin: true },
+];
+
+export function getStatusLabel(status: string, statuses?: SpeakerStatusOption[]): string {
+  if (statuses) {
+    const found = statuses.find((s) => s.slug === status);
+    if (found) return found.label;
+  }
+  if (STATUS_LABELS[status]) return STATUS_LABELS[status];
+  return status
+    .replace(/_/g, " ")
+    .replace(/\b\w/g, (c) => c.toUpperCase());
+}
 
 export const PLATFORM_LABELS: Record<LinkPlatform, string> = {
   linkedin: "LinkedIn",

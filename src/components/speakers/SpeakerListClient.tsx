@@ -2,32 +2,53 @@
 
 import { useCallback, useMemo, useState, useTransition } from "react";
 import { toast } from "sonner";
+import { SpeakersHero } from "@/components/speakers/SpeakersHero";
 import { SpeakerFilters, type SortKey, type ViewMode } from "@/components/speakers/SpeakerFilters";
 import { StatsStrip } from "@/components/speakers/StatsStrip";
+import { RulesAndWarningsSection } from "@/components/speakers/RulesAndWarningsSection";
 import { SpeakerTable } from "@/components/speakers/SpeakerTable";
 import { SpeakerBoard } from "@/components/speakers/SpeakerBoard";
 import { SpeakerForm } from "@/components/speakers/SpeakerForm";
 import { ConfirmDialog } from "@/components/speakers/ConfirmDialog";
 import { useRealtimeRefetch } from "@/lib/hooks/useRealtimeRefetch";
 import { createClient } from "@/lib/supabase/client";
-import { fetchAllTags, fetchSpeakers } from "@/lib/speakers/queries";
+import {
+  fetchAllStatuses,
+  fetchAllTags,
+  fetchRulesAndWarnings,
+  fetchSpeakers,
+} from "@/lib/speakers/queries";
 import { requestDeleteSpeaker } from "@/lib/speakers/mutations";
 import { useProfile } from "@/components/auth/ProfileProvider";
-import { TIER_ORDER, type SpeakerWithRelations, type SpeakerStatus, type Tag } from "@/lib/types"
+import {
+  TIER_ORDER,
+  type RuleOrWarningItem,
+  type SpeakerStatus,
+  type SpeakerStatusOption,
+  type SpeakerWithRelations,
+  type Tag,
+} from "@/lib/types";
 
 // Lower index = higher rank (S is index 0 in TIER_ORDER); unranked sorts last.
 const TIER_RANK = Object.fromEntries(TIER_ORDER.map((t, i) => [t, i]));
+const RECENT_CUTOFF_MS = Date.now() - 7 * 24 * 60 * 60 * 1000;
 
 export function SpeakerListClient({
   initialSpeakers,
   initialTags,
+  initialStatuses,
+  initialRulesAndWarnings,
 }: {
   initialSpeakers: SpeakerWithRelations[];
   initialTags: Tag[];
+  initialStatuses: SpeakerStatusOption[];
+  initialRulesAndWarnings: RuleOrWarningItem[];
 }) {
   const profile = useProfile();
   const [speakers, setSpeakers] = useState(initialSpeakers);
   const [allTags, setAllTags] = useState(initialTags);
+  const [statuses, setStatuses] = useState(initialStatuses);
+  const [rulesAndWarnings, setRulesAndWarnings] = useState(initialRulesAndWarnings);
   const [, startTransition] = useTransition();
 
   const [search, setSearch] = useState("");
@@ -49,15 +70,35 @@ export function SpeakerListClient({
     startTransition(() => {
       fetchSpeakers(supabase).then(setSpeakers).catch(() => {});
       fetchAllTags(supabase).then(setAllTags).catch(() => {});
+      fetchAllStatuses(supabase).then(setStatuses).catch(() => {});
+      fetchRulesAndWarnings(supabase).then(setRulesAndWarnings).catch(() => {});
     });
   }, []);
 
-  useRealtimeRefetch(["speakers", "comments", "speaker_trackers", "speaker_tags", "tags"], refetch);
+  useRealtimeRefetch(
+    [
+      "speakers",
+      "comments",
+      "speaker_trackers",
+      "speaker_tags",
+      "tags",
+      "speaker_statuses",
+      "event_settings",
+    ],
+    refetch
+  );
 
   const counts = useMemo(() => {
-    const base: Record<SpeakerStatus, number> = { accepted: 0, no_reply: 0, refused: 0, unclear: 0 };
-    for (const s of speakers) base[s.status]++;
+    const base: Record<string, number> = {};
+    for (const st of statuses) base[st.slug] = 0;
+    for (const s of speakers) {
+      base[s.status] = (base[s.status] ?? 0) + 1;
+    }
     return base;
+  }, [speakers, statuses]);
+
+  const recentAddedCount = useMemo(() => {
+    return speakers.filter((s) => new Date(s.created_at).getTime() >= RECENT_CUTOFF_MS).length;
   }, [speakers]);
 
   const filtered = useMemo(() => {
@@ -65,7 +106,11 @@ export function SpeakerListClient({
 
     if (search.trim()) {
       const q = search.trim().toLowerCase();
-      result = result.filter((s) => s.name.toLowerCase().includes(q));
+      result = result.filter(
+        (s) =>
+          s.name.toLowerCase().includes(q) ||
+          s.origin.toLowerCase().includes(q)
+      );
     }
 
     if (selectedTagIds.size > 0) {
@@ -144,44 +189,57 @@ export function SpeakerListClient({
   }
 
   return (
-    <div className="space-y-5">
-      <StatsStrip
-        total={speakers.length}
-        counts={counts}
-        activeStatus={activeStatus}
-        onToggleStatus={toggleStatusFilter}
-      />
+    <div className="pb-12">
+      {/* Cinematic Stage Hero */}
+      <SpeakersHero />
 
-      <SpeakerFilters
-        search={search}
-        onSearchChange={setSearch}
-        allTags={allTags}
-        selectedTagIds={selectedTagIds}
-        onToggleTag={toggleTag}
-        sort={sort}
-        onSortChange={setSort}
-        view={view}
-        onViewChange={setView}
-        onAddSpeaker={() => {
-          setEditingSpeaker(null);
-          setFormKey((k) => k + 1);
-          setFormOpen(true);
-        }}
-      />
+      {/* Main Dashboard Container */}
+      <div className="relative z-10 mx-auto -mt-5 max-w-[1400px] space-y-5 px-5 sm:px-7">
+        <StatsStrip
+          total={speakers.length}
+          recentAddedCount={recentAddedCount}
+          counts={counts}
+          statuses={statuses}
+          activeStatus={activeStatus}
+          onToggleStatus={toggleStatusFilter}
+          onClearStatuses={() => setActiveStatus(new Set())}
+          onStatusesChanged={refetch}
+        />
 
-      {view === "table" ? (
-        <SpeakerTable
-          speakers={filtered}
-          onEdit={(s) => {
-            setEditingSpeaker(s);
+        <RulesAndWarningsSection items={rulesAndWarnings} onSaved={refetch} />
+
+        <SpeakerFilters
+          search={search}
+          onSearchChange={setSearch}
+          allTags={allTags}
+          selectedTagIds={selectedTagIds}
+          onToggleTag={toggleTag}
+          sort={sort}
+          onSortChange={setSort}
+          view={view}
+          onViewChange={setView}
+          onAddSpeaker={() => {
+            setEditingSpeaker(null);
             setFormKey((k) => k + 1);
             setFormOpen(true);
           }}
-          onDeleteRequest={setDeleteTarget}
         />
-      ) : (
-        <SpeakerBoard speakers={filtered} />
-      )}
+
+        {view === "table" ? (
+          <SpeakerTable
+            speakers={filtered}
+            statuses={statuses}
+            onEdit={(s) => {
+              setEditingSpeaker(s);
+              setFormKey((k) => k + 1);
+              setFormOpen(true);
+            }}
+            onDeleteRequest={setDeleteTarget}
+          />
+        ) : (
+          <SpeakerBoard speakers={filtered} statuses={statuses} />
+        )}
+      </div>
 
       <SpeakerForm
         key={formKey}
@@ -189,6 +247,7 @@ export function SpeakerListClient({
         onOpenChange={setFormOpen}
         speaker={editingSpeaker}
         allTags={allTags}
+        statuses={statuses}
         onSaved={refetch}
       />
 

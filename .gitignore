@@ -42,3 +42,7 @@ next-env.d.ts
 
 # local env
 .env.local
+
+# supabase cli temp
+supabase/.temp
+supabase/env.download

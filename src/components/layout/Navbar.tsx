@@ -28,7 +28,7 @@ import { createClient } from "@/lib/supabase/client";
 
 const NAV_ITEMS = [
   { href: "/", label: "Speakers", icon: Mic2, adminOnly: false },
-  { href: "/team", label: "Team", icon: Users, adminOnly: true },
+  { href: "/team", label: "Team", icon: Users, adminOnly: false },
   { href: "/trash", label: "Trash", icon: Trash2, adminOnly: true },
   { href: "/audit-log", label: "Audit log", icon: ScrollText, adminOnly: true },
 ];
@@ -91,7 +91,7 @@ export function Navbar() {
         <div className="flex items-center gap-2">
           <DropdownMenu>
             <DropdownMenuTrigger className="flex items-center gap-2 rounded-full outline-none transition-opacity hover:opacity-80">
-              <InitialsAvatar name={profile.full_name} size="sm" />
+              <InitialsAvatar name={profile.full_name} src={profile.avatar_url} size="sm" />
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-56">
               <div className="px-2 py-1.5">

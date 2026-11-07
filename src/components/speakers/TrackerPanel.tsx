@@ -42,63 +42,77 @@ export function TrackerPanel({
   }
 
   return (
-    <div className="space-y-2">
-      <div className="flex flex-wrap gap-2">
-        {trackers.map((t) => (
-          <div
-            key={t.profile_id}
-            className="group flex items-center gap-1.5 rounded-full border border-border bg-surface-2 py-1 pl-1 pr-2"
+    <div className="flex flex-wrap items-center gap-2">
+      {trackers.map((t) => (
+        <div
+          key={t.profile_id}
+          className="group flex items-center gap-2 rounded-full border border-[#342324] bg-[#140D0E] py-1 pl-1.5 pr-2.5 transition-colors hover:border-[#4A2E30]"
+        >
+          <InitialsAvatar
+            name={t.profile?.full_name ?? "?"}
+            src={t.profile?.avatar_url}
+            size="xs"
+          />
+          <span className="text-xs font-medium text-[#F5F5F5]">
+            {t.profile?.full_name}
+          </span>
+          <button
+            type="button"
+            onClick={() => handleToggle(t.profile_id, true)}
+            disabled={busyId === t.profile_id}
+            className="rounded-full p-0.5 text-[#777070] transition-colors hover:bg-[#261819] hover:text-[#EF4444]"
+            title={`Remove ${t.profile?.full_name}`}
           >
-            <InitialsAvatar name={t.profile?.full_name ?? "?"} size="xs" />
-            <span className="text-xs text-text-primary">{t.profile?.full_name}</span>
-            <button
-              onClick={() => handleToggle(t.profile_id, true)}
-              disabled={busyId === t.profile_id}
-              className="text-text-tertiary transition-colors hover:text-red-400"
-            >
-              <X className="h-3 w-3" />
-            </button>
-          </div>
-        ))}
+            <X className="h-3 w-3" />
+          </button>
+        </div>
+      ))}
 
-        <Popover open={open} onOpenChange={setOpen}>
-          <PopoverTrigger asChild>
-            <button className="flex items-center gap-1.5 rounded-full border border-dashed border-border px-2.5 py-1 text-xs text-text-tertiary transition-colors hover:border-red-500/40 hover:text-red-300">
-              <UserPlus className="h-3.5 w-3.5" /> Add
+      <Popover open={open} onOpenChange={setOpen}>
+        <PopoverTrigger asChild>
+          <button
+            type="button"
+            className="inline-flex items-center gap-1.5 rounded-full border border-dashed border-[#3B2627] bg-[#140D0E]/70 px-3 py-1.5 text-xs font-medium text-[#A6A0A0] transition-colors hover:border-[#E31B2B]/50 hover:bg-[#1E1314] hover:text-[#F5F5F5]"
+          >
+            <UserPlus className="h-3.5 w-3.5 text-[#E31B2B]" /> Assign coordinator
+          </button>
+        </PopoverTrigger>
+        <PopoverContent className="max-h-64 w-56 overflow-y-auto p-1.5" align="start">
+          {!trackerIds.has(profile.id) && (
+            <button
+              type="button"
+              onClick={() => {
+                handleToggle(profile.id, false);
+                setOpen(false);
+              }}
+              className="flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left text-xs font-semibold text-[#FF7583] hover:bg-[#241819]"
+            >
+              <UserPlus className="h-3.5 w-3.5 text-[#E31B2B]" /> Assign myself
             </button>
-          </PopoverTrigger>
-          <PopoverContent className="w-52 max-h-60 overflow-y-auto p-1">
-            {!trackerIds.has(profile.id) && (
+          )}
+          {availableProfiles
+            .filter((p) => p.id !== profile.id)
+            .map((p) => (
               <button
+                key={p.id}
+                type="button"
                 onClick={() => {
-                  handleToggle(profile.id, false);
+                  handleToggle(p.id, false);
                   setOpen(false);
                 }}
-                className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm text-red-300 hover:bg-surface-3"
+                className="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-left text-xs text-[#F5F5F5] hover:bg-[#241819]"
               >
-                <UserPlus className="h-3.5 w-3.5" /> Assign myself
+                <InitialsAvatar name={p.full_name} src={p.avatar_url} size="xs" />
+                <span className="truncate">{p.full_name}</span>
               </button>
-            )}
-            {availableProfiles
-              .filter((p) => p.id !== profile.id)
-              .map((p) => (
-                <button
-                  key={p.id}
-                  onClick={() => {
-                    handleToggle(p.id, false);
-                    setOpen(false);
-                  }}
-                  className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm text-text-primary hover:bg-surface-3"
-                >
-                  <InitialsAvatar name={p.full_name} size="xs" /> {p.full_name}
-                </button>
-              ))}
-            {availableProfiles.length === 0 && trackerIds.has(profile.id) && (
-              <p className="px-2 py-1.5 text-xs text-text-tertiary">Everyone is already tracking this speaker.</p>
-            )}
-          </PopoverContent>
-        </Popover>
-      </div>
+            ))}
+          {availableProfiles.length === 0 && trackerIds.has(profile.id) && (
+            <p className="px-2.5 py-2 text-xs text-[#777070]">
+              Everyone is already tracking this speaker.
+            </p>
+          )}
+        </PopoverContent>
+      </Popover>
     </div>
   );
 }

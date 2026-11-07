@@ -6,6 +6,7 @@ import { motion } from "framer-motion";
 import { KeyRound, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input, Label } from "@/components/ui/input";
+import { TedxLogo } from "@/components/layout/Sidebar";
 import { createClient } from "@/lib/supabase/client";
 
 export default function ResetPasswordPage() {
@@ -69,69 +70,85 @@ function ResetPasswordForm() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-bg px-4">
+    <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-[#080808] px-4">
+      <div
+        className="pointer-events-none fixed -top-40 left-1/2 h-[420px] w-[420px] -translate-x-1/2 rounded-full blur-[130px]"
+        style={{ background: "radial-gradient(circle, rgba(227,27,43,0.22) 0%, transparent 70%)" }}
+        aria-hidden="true"
+      />
+
       <motion.div
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
-        className="w-full max-w-sm rounded-2xl border border-border bg-surface-1 p-6 shadow-2xl"
+        className="relative z-10 w-full max-w-[390px]"
       >
-        <div className="mb-6 flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-red-500/15 text-red-400">
-            <KeyRound className="h-5 w-5" />
-          </div>
-          <div>
-            <h1 className="text-base font-semibold text-text-primary">
-              {isWelcome ? "Welcome to TEDxTBS" : "Reset your password"}
-            </h1>
-            <p className="text-xs text-text-tertiary">
-              {isWelcome ? "Set a password to finish setting up your account." : "Choose a new password."}
-            </p>
-          </div>
+        <div className="mb-6 flex justify-center">
+          <TedxLogo className="flex flex-col items-center" />
         </div>
 
-        {done ? (
-          <div className="flex flex-col items-center gap-2 py-6 text-center">
-            <CheckCircle2 className="h-8 w-8 text-status-accepted" />
-            <p className="text-sm text-text-primary">Password set. Taking you in…</p>
-          </div>
-        ) : (
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="space-y-1.5">
-              <Label htmlFor="password">New password</Label>
-              <Input
-                id="password"
-                type="password"
-                required
-                disabled={!ready}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="At least 8 characters"
-              />
+        <div className="tedx-table-shell rounded-2xl p-6 sm:p-7">
+          <div className="mb-6 flex items-center gap-3">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-[#E31B2B]/35 bg-[#E31B2B]/15 text-[#FF3B4E]">
+              <KeyRound className="h-5 w-5" />
             </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="confirm">Confirm password</Label>
-              <Input
-                id="confirm"
-                type="password"
-                required
-                disabled={!ready}
-                value={confirm}
-                onChange={(e) => setConfirm(e.target.value)}
-              />
-            </div>
-
-            {error && (
-              <p className="rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-sm text-red-300">
-                {error}
+            <div>
+              <h1 className="text-base font-semibold text-[#F5F5F5]">
+                {isWelcome ? "Welcome to TEDxTBS" : "Reset your password"}
+              </h1>
+              <p className="text-xs text-[#8A8282]">
+                {isWelcome
+                  ? "Set a password to finish activating your coordinator account."
+                  : "Choose a secure new password."}
               </p>
-            )}
+            </div>
+          </div>
 
-            <Button type="submit" className="w-full" loading={loading} disabled={!ready}>
-              {loading ? "Saving…" : "Set password"}
-            </Button>
-          </form>
-        )}
+          {done ? (
+            <div className="flex flex-col items-center gap-2 py-6 text-center">
+              <CheckCircle2 className="h-8 w-8 text-[#22C55E]" />
+              <p className="text-sm font-medium text-[#F5F5F5]">
+                Password saved. Entering dashboard…
+              </p>
+            </div>
+          ) : (
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="space-y-1.5">
+                <Label htmlFor="password">New password</Label>
+                <Input
+                  id="password"
+                  type="password"
+                  required
+                  disabled={!ready}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="At least 8 characters"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="confirm">Confirm password</Label>
+                <Input
+                  id="confirm"
+                  type="password"
+                  required
+                  disabled={!ready}
+                  value={confirm}
+                  onChange={(e) => setConfirm(e.target.value)}
+                />
+              </div>
+
+              {error && (
+                <p className="rounded-xl border border-[#E31B2B]/35 bg-[#E31B2B]/12 px-3.5 py-2.5 text-xs text-[#FF8590]">
+                  {error}
+                </p>
+              )}
+
+              <Button type="submit" className="w-full" loading={loading} disabled={!ready}>
+                {loading ? "Saving…" : "Set password"}
+              </Button>
+            </form>
+          )}
+        </div>
       </motion.div>
     </div>
   );

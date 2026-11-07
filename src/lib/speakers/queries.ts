@@ -1,13 +1,23 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import type { Speaker, SpeakerLink, SpeakerTracker, SpeakerWithRelations, Tag, Profile } from "@/lib/types";
+import {
+  DEFAULT_STATUSES,
+  type Speaker,
+  type SpeakerLink,
+  type SpeakerStatusOption,
+  type SpeakerTracker,
+  type SpeakerWithRelations,
+  type Tag,
+  type Profile,
+  type RuleOrWarningItem,
+} from "@/lib/types";
 
 export const SPEAKER_SELECT = `
   *,
   speaker_links(*),
   speaker_tags(tags(*)),
-  speaker_trackers(profile_id, source, added_at, profile:profiles(id, full_name)),
-  added_by_profile:profiles!speakers_added_by_fkey(id, full_name),
-  deleted_by_profile:profiles!speakers_deleted_by_fkey(id, full_name),
+  speaker_trackers(profile_id, source, added_at, profile:profiles(id, full_name, avatar_url)),
+  added_by_profile:profiles!speakers_added_by_fkey(id, full_name, avatar_url),
+  deleted_by_profile:profiles!speakers_deleted_by_fkey(id, full_name, avatar_url),
   comments(count)
 `;
 
@@ -15,9 +25,9 @@ export const SPEAKER_SELECT = `
 interface RawSpeakerRow extends Speaker {
   speaker_links?: SpeakerLink[] | null;
   speaker_tags?: { tags: Tag | null }[] | null;
-  speaker_trackers?: (SpeakerTracker & { profile: Pick<Profile, "id" | "full_name"> | null })[] | null;
-  added_by_profile?: Pick<Profile, "id" | "full_name"> | null;
-  deleted_by_profile?: Pick<Profile, "id" | "full_name"> | null;
+  speaker_trackers?: (SpeakerTracker & { profile: Pick<Profile, "id" | "full_name" | "avatar_url"> | null })[] | null;
+  added_by_profile?: Pick<Profile, "id" | "full_name" | "avatar_url"> | null;
+  deleted_by_profile?: Pick<Profile, "id" | "full_name" | "avatar_url"> | null;
   comments?: { count: number }[] | null;
 }
 
@@ -78,4 +88,58 @@ export async function fetchAllProfiles(supabase: SupabaseClient) {
   const { data, error } = await supabase.from("profiles").select("*").order("full_name");
   if (error) throw error;
   return data ?? [];
+}
+
+export async function fetchAllStatuses(supabase: SupabaseClient): Promise<SpeakerStatusOption[]> {
+  const { data, error } = await supabase
+    .from("speaker_statuses")
+    .select("*")
+    .order("position", { ascending: true })
+    .order("created_at", { ascending: true });
+
+  if (error || !data || data.length === 0) {
+    return DEFAULT_STATUSES;
+  }
+  return data as SpeakerStatusOption[];
+}
+
+export const DEFAULT_RULES_AND_WARNINGS: RuleOrWarningItem[] = [
+  {
+    id: "w1",
+    type: "warning",
+    text: "Never contact a speaker who is already being tracked by another team member without coordinating with them first.",
+  },
+  {
+    id: "w2",
+    type: "warning",
+    text: "Do not send official confirmations or promise speaking slots without approval from the Speaker Coordinator.",
+  },
+  {
+    id: "r1",
+    type: "rule",
+    text: "Always check the speaker list before adding a new speaker to avoid duplicates.",
+  },
+  {
+    id: "r2",
+    type: "rule",
+    text: "Log every outreach attempt (email, LinkedIn, Instagram, phone call) in the speaker's Progress & comments section.",
+  },
+  {
+    id: "r3",
+    type: "rule",
+    text: "Keep the speaker's status and custom outreach message up to date as conversations progress.",
+  },
+];
+
+export async function fetchRulesAndWarnings(supabase: SupabaseClient): Promise<RuleOrWarningItem[]> {
+  const { data, error } = await supabase
+    .from("event_settings")
+    .select("rules_and_warnings")
+    .eq("id", 1)
+    .maybeSingle();
+
+  if (error || !data || !Array.isArray(data.rules_and_warnings)) {
+    return DEFAULT_RULES_AND_WARNINGS;
+  }
+  return data.rules_and_warnings as RuleOrWarningItem[];
 }
